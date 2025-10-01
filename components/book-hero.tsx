@@ -23,7 +23,7 @@ export function BookHero() {
         <div className="space-y-6">
           <div>
             <div className="mb-2">
-              <span className="inline-block bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full">
+              <span className="inline-block bg-green-100 text-green-800 text-sm font-medium px-3 py-1 rounded-full">
                 {BOOK_INFO.series}
               </span>
             </div>
@@ -45,15 +45,15 @@ export function BookHero() {
               {BOOK_INFO.description}
             </p>
             
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-              <p className="text-yellow-800 font-medium">
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+              <p className="text-green-800 font-medium">
                 🎉 {BOOK_INFO.preorderBonus}
               </p>
             </div>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-4">
-            <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 text-lg">
+            <Button size="lg" className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 text-lg">
               Preorder Now
             </Button>
             <Button variant="outline" size="lg" className="px-8 py-3 text-lg">

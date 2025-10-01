@@ -45,15 +45,15 @@ export function Testimonials() {
           </h3>
           <div className="grid grid-cols-3 gap-8 text-center">
             <div>
-              <div className="text-3xl font-bold text-blue-600">{PREORDER_STATS.earlyPreorders}</div>
+              <div className="text-3xl font-bold text-green-600">{PREORDER_STATS.earlyPreorders}</div>
               <div className="text-sm text-gray-600">Early Preorders</div>
             </div>
             <div>
-              <div className="text-3xl font-bold text-blue-600">{PREORDER_STATS.rating}</div>
+              <div className="text-3xl font-bold text-green-600">{PREORDER_STATS.rating}</div>
               <div className="text-sm text-gray-600">Early Rating</div>
             </div>
             <div>
-              <div className="text-3xl font-bold text-blue-600">{PREORDER_STATS.countries}</div>
+              <div className="text-3xl font-bold text-green-600">{PREORDER_STATS.countries}</div>
               <div className="text-sm text-gray-600">Countries</div>
             </div>
           </div>

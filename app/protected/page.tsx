@@ -16,7 +16,7 @@ export default async function ProtectedPage() {
   return (
     <div className="flex-1 w-full flex flex-col gap-12">
       <div className="w-full">
-        <div className="bg-blue-50 text-sm p-3 px-5 rounded-md text-blue-800 flex gap-3 items-center">
+        <div className="bg-green-50 text-sm p-3 px-5 rounded-md text-green-800 flex gap-3 items-center">
           <InfoIcon size="16" strokeWidth={2} />
           Welcome back! You&apos;re now logged in and can access exclusive preorder benefits.
         </div>

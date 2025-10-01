@@ -10,7 +10,7 @@ export default function Home() {
     <main className="min-h-screen flex flex-col">
 
       {/* Preorder Banner */}
-      <div className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white py-3">
+      <div className="w-full bg-gradient-to-r from-green-600 to-green-700 text-white py-3">
         <div className="max-w-6xl mx-auto px-4 text-center">
           <p className="text-lg font-semibold">
             🎉 <strong>Limited Time:</strong> Preorder now and get a <strong>signed copy</strong> of &ldquo;Waiting to Fly&rdquo; while supplies last!
@@ -41,7 +41,7 @@ export default function Home() {
         <AboutAuthor />
 
         {/* Footer */}
-        <footer className="w-full bg-gray-900 text-white py-16">
+        <footer className="w-full bg-green-900 text-white py-16">
           <div className="max-w-6xl mx-auto px-4">
             <div className="grid md:grid-cols-3 gap-8">
               <div>
@@ -70,7 +70,7 @@ export default function Home() {
                 </div>
               </div>
             </div>
-            <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
+            <div className="border-t border-green-800 mt-8 pt-8 text-center text-gray-400">
               <p>&copy; 2024 {SITE_CONFIG.name}. All rights reserved.</p>
             </div>
           </div>

@@ -35,7 +35,7 @@ export function AboutAuthor() {
             <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
               About the Author
             </h2>
-            <h3 className="text-xl text-blue-600 font-semibold mb-4">
+            <h3 className="text-xl text-green-600 font-semibold mb-4">
               {AUTHOR_INFO.name}
             </h3>
           </div>
@@ -50,11 +50,11 @@ export function AboutAuthor() {
             </p>
           </div>
 
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <p className="text-blue-800 font-medium italic">
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+            <p className="text-green-800 font-medium italic">
               &ldquo;{AUTHOR_INFO.quote}&rdquo;
             </p>
-            <p className="text-blue-700 text-sm mt-2">— {AUTHOR_INFO.name}</p>
+            <p className="text-green-700 text-sm mt-2">— {AUTHOR_INFO.name}</p>
           </div>
 
           <div className="space-y-4">
@@ -64,7 +64,7 @@ export function AboutAuthor() {
                 {AUTHOR_INFO.education.map((edu, index) => (
                   <div key={index} className="bg-gray-50 p-3 rounded-lg">
                     <div className="font-medium text-gray-900">{edu.degree}</div>
-                    <div className="text-sm text-blue-600 font-medium">{edu.school}</div>
+                    <div className="text-sm text-green-600 font-medium">{edu.school}</div>
                     <div className="text-xs text-gray-500">{edu.years}</div>
                   </div>
                 ))}
