@@ -10,7 +10,8 @@ export const BOOK_INFO = {
   formats: ["Hardcover", "Paperback", "eBook"],
   preorderBonus: "Preorder now and get a singed copy of the book!",
   series: "Memoir Series",
-  previousBook: "Before I Became a Refugee Girl: Life in Laos During the Vietnam War Era"
+  previousBook: "Before I Became a Refugee Girl: Life in Laos During the Vietnam War Era",
+  coverImage: "/images/bookImage.png"
 } as const;
 
 export const AUTHOR_INFO = {

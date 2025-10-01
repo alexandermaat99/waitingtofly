@@ -3,20 +3,32 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { BOOK_INFO } from "@/lib/constants";
+import Image from "next/image";
 
 export function BookHero() {
   return (
     <section className="w-full max-w-6xl mx-auto px-4 py-16">
       <div className="grid lg:grid-cols-2 gap-12 items-center">
-        {/* Book Cover Placeholder */}
+        {/* Book Cover */}
         <div className="flex justify-center lg:justify-start">
-          <Card className="w-80 h-96 bg-gradient-to-br from-blue-50 to-indigo-100 border-2 border-dashed border-gray-300 flex items-center justify-center">
-            <div className="text-center text-gray-500">
-              <div className="text-6xl mb-4">📖</div>
-              <p className="text-lg font-medium">Book Cover</p>
-              <p className="text-sm">Coming Soon</p>
-            </div>
-          </Card>
+          {BOOK_INFO.coverImage ? (
+            <Image
+              src={BOOK_INFO.coverImage}
+              alt={`${BOOK_INFO.title} - Book Cover`}
+              width={500}
+              height={384}
+              className="max-w-full h-auto object-contain"
+              priority
+            />
+          ) : (
+            <Card className="w-80 h-96 bg-gradient-to-br from-blue-50 to-indigo-100 border-2 border-dashed border-gray-300 flex items-center justify-center">
+              <div className="text-center text-gray-500">
+                <div className="text-6xl mb-4">📖</div>
+                <p className="text-lg font-medium">Book Cover</p>
+                <p className="text-sm">Coming Soon</p>
+              </div>
+            </Card>
+          )}
         </div>
 
         {/* Book Information */}
