@@ -19,6 +19,26 @@ export const AUTHOR_INFO = {
   personalNote: '"Waiting to Fly" continues the deeply personal narrative begun in her first memoir, offering readers an intimate look at the refugee experience through the eyes of someone who lived it.',
   quote: "Every refugee carries within them the seeds of hope and the strength to rebuild. This is our story of survival, resilience, and ultimately, triumph.",
   photo: "/images/author_photo.png",
+  education: [
+    {
+      degree: "Doctor of Management (D.M.), Organizational Leadership",
+      school: "University of Phoenix",
+      years: "2003 - 2009",
+      description: "Doctor of Management with the emphasis in Organizational Leadership"
+    },
+    {
+      degree: "Master of Science (M.S.), Technology Management", 
+      school: "National University",
+      years: "1996 - 1997",
+      description: "Master of Information Technology"
+    },
+    {
+      degree: "Bachelor of Science (B.S.), Information Technology",
+      school: "San Diego State University", 
+      years: "1991 - 1993",
+      description: "Bachelor of Science in Information Technology"
+    }
+  ],
   previousWorks: [
     {
       title: "Before I Became a Refugee Girl: Life in Laos During the Vietnam War Era",

@@ -13,7 +13,7 @@ export function AboutAuthor() {
               <Image
                 src={AUTHOR_INFO.photo}
                 alt={`${AUTHOR_INFO.name} - Author Photo`}
-                width={320}
+                width={400}
                 height={384}
                 className="w-full h-full object-cover"
                 priority
@@ -57,13 +57,28 @@ export function AboutAuthor() {
             <p className="text-blue-700 text-sm mt-2">— {AUTHOR_INFO.name}</p>
           </div>
 
-          <div className="space-y-2">
-            <h4 className="font-semibold text-gray-900">Previous Works:</h4>
-            <ul className="text-gray-700 space-y-1">
-              {AUTHOR_INFO.previousWorks.map((work, index) => (
-                <li key={index}>• &ldquo;{work.title}&rdquo; ({work.year}) - {work.achievement}</li>
-              ))}
-            </ul>
+          <div className="space-y-4">
+            <div>
+              <h4 className="font-semibold text-gray-900 mb-3">Education:</h4>
+              <div className="space-y-3">
+                {AUTHOR_INFO.education.map((edu, index) => (
+                  <div key={index} className="bg-gray-50 p-3 rounded-lg">
+                    <div className="font-medium text-gray-900">{edu.degree}</div>
+                    <div className="text-sm text-blue-600 font-medium">{edu.school}</div>
+                    <div className="text-xs text-gray-500">{edu.years}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <h4 className="font-semibold text-gray-900">Previous Works:</h4>
+              <ul className="text-gray-700 space-y-1 mt-2">
+                {AUTHOR_INFO.previousWorks.map((work, index) => (
+                  <li key={index}>• &ldquo;{work.title}&rdquo; ({work.year}) - {work.achievement}</li>
+                ))}
+              </ul>
+            </div>
           </div>
         </div>
       </div>
