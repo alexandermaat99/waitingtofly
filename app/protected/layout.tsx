@@ -1,8 +1,8 @@
 import { DeployButton } from "@/components/deploy-button";
 import { EnvVarWarning } from "@/components/env-var-warning";
 import { AuthButton } from "@/components/auth-button";
-import { ThemeSwitcher } from "@/components/theme-switcher";
 import { hasEnvVars } from "@/lib/utils";
+import { SITE_CONFIG } from "@/lib/constants";
 import Link from "next/link";
 
 export default function ProtectedLayout({
@@ -16,7 +16,9 @@ export default function ProtectedLayout({
         <nav className="w-full flex justify-center border-b border-b-foreground/10 h-16">
           <div className="w-full max-w-5xl flex justify-between items-center p-3 px-5 text-sm">
             <div className="flex gap-5 items-center font-semibold">
-              <Link href={"/"}>Next.js Supabase Starter</Link>
+              <Link href={"/"} className="text-xl font-bold text-blue-600">
+                {SITE_CONFIG.name}
+              </Link>
               <div className="flex items-center gap-2">
                 <DeployButton />
               </div>
@@ -40,7 +42,6 @@ export default function ProtectedLayout({
               Supabase
             </a>
           </p>
-          <ThemeSwitcher />
         </footer>
       </div>
     </main>
