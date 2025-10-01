@@ -52,7 +52,7 @@ export function AboutAuthor() {
 
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <p className="text-blue-800 font-medium italic">
-              "{AUTHOR_INFO.quote}"
+              &ldquo;{AUTHOR_INFO.quote}&rdquo;
             </p>
             <p className="text-blue-700 text-sm mt-2">— {AUTHOR_INFO.name}</p>
           </div>
@@ -61,7 +61,7 @@ export function AboutAuthor() {
             <h4 className="font-semibold text-gray-900">Previous Works:</h4>
             <ul className="text-gray-700 space-y-1">
               {AUTHOR_INFO.previousWorks.map((work, index) => (
-                <li key={index}>• "{work.title}" ({work.year}) - {work.achievement}</li>
+                <li key={index}>• &ldquo;{work.title}&rdquo; ({work.year}) - {work.achievement}</li>
               ))}
             </ul>
           </div>

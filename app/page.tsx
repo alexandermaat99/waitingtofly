@@ -1,4 +1,3 @@
-import { AuthButton } from "@/components/auth-button";
 import { BookHero } from "@/components/book-hero";
 import { PreorderForm } from "@/components/preorder-form";
 import { AboutAuthor } from "@/components/about-author";
@@ -14,7 +13,7 @@ export default function Home() {
       <div className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white py-3">
         <div className="max-w-6xl mx-auto px-4 text-center">
           <p className="text-lg font-semibold">
-            🎉 <strong>Limited Time:</strong> Preorder now and get a <strong>signed copy</strong> of "Waiting to Fly" while supplies last!
+            🎉 <strong>Limited Time:</strong> Preorder now and get a <strong>signed copy</strong> of &ldquo;Waiting to Fly&rdquo; while supplies last!
           </p>
         </div>
       </div>

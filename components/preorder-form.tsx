@@ -28,10 +28,10 @@ export function PreorderForm() {
       <Card className="w-full max-w-md mx-auto p-8 text-center">
         <div className="text-green-600 text-6xl mb-4">✓</div>
         <h3 className="text-2xl font-bold text-gray-900 mb-2">
-          You're All Set!
+          You&apos;re All Set!
         </h3>
         <p className="text-gray-600 mb-4">
-          Thank you for your preorder! We'll send you updates about the book release and exclusive content.
+          Thank you for your preorder! We&apos;ll send you updates about the book release and exclusive content.
         </p>
         <Button 
           onClick={() => setIsSubmitted(false)}
@@ -50,7 +50,7 @@ export function PreorderForm() {
           Reserve Your Copy
         </h3>
         <p className="text-gray-600">
-          Be among the first to receive "Waiting to Fly" when it's released.
+          Be among the first to receive &ldquo;Waiting to Fly&rdquo; when it&apos;s released.
         </p>
       </div>
 

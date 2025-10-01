@@ -18,7 +18,7 @@ export default async function ProtectedPage() {
       <div className="w-full">
         <div className="bg-blue-50 text-sm p-3 px-5 rounded-md text-blue-800 flex gap-3 items-center">
           <InfoIcon size="16" strokeWidth={2} />
-          Welcome back! You're now logged in and can access exclusive preorder benefits.
+          Welcome back! You&apos;re now logged in and can access exclusive preorder benefits.
         </div>
       </div>
       
@@ -28,7 +28,7 @@ export default async function ProtectedPage() {
             Ready to Preorder?
           </h2>
           <p className="text-lg text-gray-600 max-w-2xl">
-            As a registered user, you get exclusive early access to "Waiting to Fly" 
+            As a registered user, you get exclusive early access to &ldquo;Waiting to Fly&rdquo; 
             and special preorder bonuses.
           </p>
         </div>

@@ -10,7 +10,7 @@ export function Testimonials() {
           What Readers Are Saying
         </h2>
         <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-          Scholars, historians, and early readers are already praising "Waiting to Fly" 
+          Scholars, historians, and early readers are already praising &ldquo;Waiting to Fly&rdquo; 
           for its powerful storytelling and invaluable contribution to refugee literature.
         </p>
       </div>
@@ -23,7 +23,7 @@ export function Testimonials() {
                 ⭐⭐⭐⭐⭐
               </div>
               <blockquote className="text-gray-700 italic leading-relaxed">
-                "{testimonial.quote}"
+                &ldquo;{testimonial.quote}&rdquo;
               </blockquote>
               <div className="border-t border-gray-100 pt-4">
                 <p className="font-semibold text-gray-900">

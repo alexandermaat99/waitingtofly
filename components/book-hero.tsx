@@ -36,7 +36,7 @@ export function BookHero() {
             </div>
             <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
               <p className="font-medium mb-1">Previous book in the series:</p>
-              <p className="italic">"{BOOK_INFO.previousBook}"</p>
+              <p className="italic">&ldquo;{BOOK_INFO.previousBook}&rdquo;</p>
             </div>
           </div>
 
