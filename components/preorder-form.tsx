@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
+import { BOOK_INFO } from "@/lib/constants";
+import Link from "next/link";
 
 export function PreorderForm() {
   const [email, setEmail] = useState("");
@@ -33,12 +35,20 @@ export function PreorderForm() {
         <p className="text-gray-600 mb-4">
           Thank you for your preorder! We&apos;ll send you updates about the book release and exclusive content.
         </p>
-        <Button 
-          onClick={() => setIsSubmitted(false)}
-          variant="outline"
-        >
-          Preorder Another Copy
-        </Button>
+        <div className="space-y-3">
+          <Link href="/checkout">
+            <Button className="w-full bg-green-600 hover:bg-green-700 text-white">
+              Complete Your Order
+            </Button>
+          </Link>
+          <Button 
+            onClick={() => setIsSubmitted(false)}
+            variant="outline"
+            className="w-full"
+          >
+            Preorder Another Copy
+          </Button>
+        </div>
       </Card>
     );
   }
@@ -50,7 +60,7 @@ export function PreorderForm() {
           Reserve Your Copy
         </h3>
         <p className="text-gray-600">
-          Be among the first to receive &ldquo;Waiting to Fly&rdquo; when it&apos;s released.
+          Be among the first to receive &ldquo;{BOOK_INFO.title}&rdquo; when it&apos;s released.
         </p>
       </div>
 
@@ -79,17 +89,28 @@ export function PreorderForm() {
           />
         </div>
 
-        <Button 
-          type="submit" 
-          className="w-full bg-green-600 hover:bg-green-700 text-white"
-          disabled={isLoading}
-        >
-          {isLoading ? "Processing..." : "Preorder Now"}
-        </Button>
+        <div className="space-y-3">
+          <Link href="/checkout">
+            <Button 
+              type="button"
+              className="w-full bg-green-600 hover:bg-green-700 text-white"
+            >
+              Complete Order & Pay Now
+            </Button>
+          </Link>
+          
+          <Button 
+            type="submit" 
+            variant="outline"
+            className="w-full"
+            disabled={isLoading}
+          >
+            {isLoading ? "Processing..." : "Just Get Updates (No Payment)"}
+          </Button>
+        </div>
 
         <p className="text-xs text-gray-500 text-center">
-          By preordering, you agree to receive updates about this book. 
-          No payment required until release.
+          Choose to complete your order with payment or just get updates about the book release.
         </p>
       </form>
     </Card>

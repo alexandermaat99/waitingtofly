@@ -14,12 +14,35 @@ export const BOOK_INFO = {
   coverImage: "/images/bookImage.png"
 } as const;
 
+export const BOOK_FORMATS = {
+  hardcover: {
+    name: "Hardcover",
+    price: 24.99,
+    description: "Premium hardcover edition with dust jacket"
+  },
+  paperback: {
+    name: "Paperback", 
+    price: 18.99,
+    description: "Standard paperback edition"
+  },
+  ebook: {
+    name: "E-book",
+    price: 12.99,
+    description: "Digital version for e-readers and devices"
+  },
+  audiobook: {
+    name: "Audiobook",
+    price: 19.99,
+    description: "Narrated audio version"
+  }
+} as const;
+
 export const AUTHOR_INFO = {
   name: "Samly Maat",
   bio: "Samly Maat is a Laotian-American author whose powerful memoirs capture the resilience and spirit of refugee communities. Her firsthand experiences during the Vietnam War era and refugee resettlement provide authentic insight into one of history's most challenging periods.",
   personalNote: '"Waiting to Fly" continues the deeply personal narrative begun in her first memoir, offering readers an intimate look at the refugee experience through the eyes of someone who lived it.',
   quote: "Every refugee carries within them the seeds of hope and the strength to rebuild. This is our story of survival, resilience, and ultimately, triumph.",
-  photo: "/images/author_photo.png",
+  photo: "/images/author_photo.jpg",
   education: [
     {
       degree: "Doctor of Management (D.M.), Organizational Leadership",

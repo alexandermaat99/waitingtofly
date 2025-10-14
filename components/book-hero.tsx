@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { BOOK_INFO } from "@/lib/constants";
 import Image from "next/image";
+import Link from "next/link";
 
 export function BookHero() {
   return (
@@ -65,9 +66,11 @@ export function BookHero() {
           </div>
 
           <div className="flex flex-col sm:flex-row gap-4">
-            <Button size="lg" className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 text-lg">
-              Preorder Now
-            </Button>
+            <Link href="/checkout">
+              <Button size="lg" className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 text-lg">
+                Preorder Now
+              </Button>
+            </Link>
             <Button variant="outline" size="lg" className="px-8 py-3 text-lg">
               Read Sample
             </Button>

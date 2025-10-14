@@ -10,13 +10,13 @@ export default function Home() {
     <main className="min-h-screen flex flex-col">
 
       {/* Preorder Banner */}
-      <div className="w-full bg-gradient-to-r from-green-600 to-green-700 text-white py-3">
+      <Link href="/checkout" className="w-full bg-gradient-to-r from-green-600 to-green-700 text-white py-3 hover:from-green-700 hover:to-green-800 transition-all duration-200 cursor-pointer block">
         <div className="max-w-6xl mx-auto px-4 text-center">
           <p className="text-lg font-semibold">
             🎉 <strong>Limited Time:</strong> Preorder now and get a <strong>signed copy</strong> of &ldquo;Waiting to Fly&rdquo; while supplies last!
           </p>
         </div>
-      </div>
+      </Link>
 
       {/* Main Content */}
       <div className="flex-1">
