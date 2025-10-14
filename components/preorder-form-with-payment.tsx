@@ -7,7 +7,6 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { BOOK_INFO, PREORDER_BENEFITS, BOOK_FORMATS } from "@/lib/constants";
 import { calculateTax } from "@/lib/tax-config";
-import { getStripe } from "@/lib/stripe-client";
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import Link from "next/link";
@@ -19,7 +18,7 @@ interface PreorderFormWithPaymentProps {
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
-function PaymentForm({ onSuccess }: PreorderFormWithPaymentProps) {
+function PaymentForm({}: PreorderFormWithPaymentProps) {
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [bookFormat, setBookFormat] = useState("hardcover");
@@ -43,7 +42,7 @@ function PaymentForm({ onSuccess }: PreorderFormWithPaymentProps) {
   // Tax calculation using centralized config
   const subtotal = BOOK_FORMATS[bookFormat as keyof typeof BOOK_FORMATS].price;
   const isDigital = ['ebook', 'audiobook'].includes(bookFormat);
-  const { tax, rate } = calculateTax(subtotal, shippingCountry, shippingState, isDigital);
+  const { tax } = calculateTax(subtotal, shippingCountry, shippingState, isDigital);
   const total = subtotal + tax;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -112,12 +111,6 @@ function PaymentForm({ onSuccess }: PreorderFormWithPaymentProps) {
     }
   };
 
-  const appearance = {
-    theme: 'stripe' as const,
-    variables: {
-      colorPrimary: '#059669',
-    },
-  };
 
   return (
     <div className="w-full max-w-4xl mx-auto p-8">
