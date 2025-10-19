@@ -10,8 +10,7 @@ export function Testimonials() {
           What Readers Are Saying
         </h2>
         <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-          Scholars, historians, and early readers are already praising &ldquo;Waiting to Fly&rdquo; 
-          for its powerful storytelling and invaluable contribution to refugee literature.
+        The following words are drawn from early reader responses to Samly Maat’s first memoir, <span className="font-semibold italic">Before I Became a Refugee Girl</span>. They capture the spirit of courage, gratitude, and hope that continues in her next book, <span className="font-semibold italic">Waiting to Fly</span>.
         </p>
       </div>
 
@@ -38,7 +37,7 @@ export function Testimonials() {
         ))}
       </div>
 
-      <div className="text-center mt-12">
+      {/* <div className="text-center mt-12">
         <div className="bg-gray-50 rounded-lg p-8 max-w-2xl mx-auto">
           <h3 className="text-xl font-bold text-gray-900 mb-4">
             Join Thousands of Preorder Readers
@@ -58,7 +57,7 @@ export function Testimonials() {
             </div>
           </div>
         </div>
-      </div>
+      </div> */}
     </section>
   );
 }

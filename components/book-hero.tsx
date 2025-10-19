@@ -65,15 +65,12 @@ export function BookHero() {
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex justify-left">
             <Link href="/checkout">
               <Button size="lg" className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 text-lg">
                 Preorder Now
               </Button>
             </Link>
-            <Button variant="outline" size="lg" className="px-8 py-3 text-lg">
-              Read Sample
-            </Button>
           </div>
 
           <div className="text-sm text-gray-500">

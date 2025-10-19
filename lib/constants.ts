@@ -5,7 +5,7 @@ export const BOOK_INFO = {
   title: "Waiting to Fly: A Laotian Refugee Girl's Journey in Nong Khai",
   author: "Samly Maat",
   genre: "Memoir • Biography • History",
-  description: "The second book in the Memoir Series, 'Waiting to Fly' chronicles the harrowing yet hopeful journey of a young Laotian refugee girl during her formative years in Nong Khai. This deeply personal memoir captures the resilience, dreams, and determination of those who fled war-torn Laos, offering an intimate look at the refugee experience during the Vietnam War era.",
+  description: "In Waiting to Fly, the young Laotian girl from Before I Became a Refugee Girl faces life inside the Nong Khai refugee camp. Through loss, laughter, and quiet moments of hope, she learns that freedom begins with courage. It is a story about finding light in uncertainty and about how waiting can become a kind of flight.",
   releaseDate: "December 2025",
   formats: ["Hardcover", "Paperback", "eBook"],
   preorderBonus: "Preorder now and get a singed copy of the book!",
@@ -39,8 +39,8 @@ export const BOOK_FORMATS = {
 
 export const AUTHOR_INFO = {
   name: "Samly Maat",
-  bio: "Samly Maat is a Laotian-American author whose powerful memoirs capture the resilience and spirit of refugee communities. Her firsthand experiences during the Vietnam War era and refugee resettlement provide authentic insight into one of history's most challenging periods.",
-  personalNote: '"Waiting to Fly" continues the deeply personal narrative begun in her first memoir, offering readers an intimate look at the refugee experience through the eyes of someone who lived it.',
+  bio: "Dr. Samly Maat is an author and speaker whose life traces a remarkable journey from the rice fields of Laos to the refugee camps of Thailand, from the decks of the U.S. Navy to a distinguished career in engineering and leadership.",
+  personalNote: 'Through her memoir collection, <strong><em>The Becoming Series</em></strong>, she shares true stories of courage, perseverance, and transformation, showing that no matter where you begin, you have the power to rise. She writes to remind us that strength is not born in comfort, but in courage.',
   quote: "Every refugee carries within them the seeds of hope and the strength to rebuild. This is our story of survival, resilience, and ultimately, triumph.",
   photo: "/images/author_photo.jpg",
   education: [
@@ -74,19 +74,19 @@ export const AUTHOR_INFO = {
 
 export const TESTIMONIALS = [
   {
-    quote: "A powerful and deeply moving memoir that captures the resilience of the human spirit. Samly Maat's storytelling brings to life the refugee experience with authenticity and grace.",
-    author: "Dr. Patricia Nguyen",
-    role: "Professor of Southeast Asian Studies, UCLA"
+    quote: "Dr. Samly Maat’s story helped me see my own strength again. Her courage reminds me that hope never truly leaves us—it only waits for us to rise.",
+    author: "Abigail Measles",
+    role: "Student of Southeast Asian Studies"
   },
   {
-    quote: "This continuation of the Memoir Series is both heartbreaking and hopeful. Maat's voice is essential for understanding the Laotian refugee experience during this pivotal period.",
+    quote: "Every chapter touched my heart. I cried, I smiled, and I felt less alone in my own struggles. This book taught me that healing is possible, one step at a time.",
     author: "Professor James Morrison", 
-    role: "Historian and Author of 'Refugee Voices'"
+    role: "Historian and Refugee Studies Professor"
   },
   {
-    quote: "An intimate and courageous account that should be required reading. Maat's memoir offers invaluable insight into the refugee journey and the strength it takes to rebuild.",
-    author: "Maria Santos",
-    role: "Literary Critic, Refugee Stories Review"
+    quote: "Her words are a mirror for anyone who has faced fear or loss. She shows that even the smallest act of faith can lead to freedom.",
+    author: "Maria Viengchang",
+    role: "Literary Critic and Researcher"
   }
 ] as const;
 
@@ -111,4 +111,11 @@ export const SITE_CONFIG = {
     instagram: "#", 
     facebook: "#"
   }
+} as const;
+
+export const FOOTER_TAGLINES = {
+  primary: "A powerful memoir about resilience, hope, and the refugee experience during the Vietnam War era.",
+  alternative: "Discover the untold stories of courage, survival, and the human spirit in the face of adversity.",
+  inspirational: "Inspiring resilience and hope—discover true stories of overcoming adversity, reclaiming freedom, and finding strength on every page.",
+  journey: "Follow one woman's extraordinary journey from refugee camp to freedom, and find your own path to resilience."
 } as const;

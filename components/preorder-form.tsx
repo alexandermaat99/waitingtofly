@@ -57,11 +57,11 @@ export function PreorderForm() {
     <Card className="w-full max-w-md mx-auto p-8">
       <div className="text-center mb-6">
         <h3 className="text-2xl font-bold text-gray-900 mb-2">
-          Reserve Your Copy
+          Join our mailing list
         </h3>
-        <p className="text-gray-600">
+        {/* <p className="text-gray-600">
           Be among the first to receive &ldquo;{BOOK_INFO.title}&rdquo; when it&apos;s released.
-        </p>
+        </p> */}
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -90,27 +90,27 @@ export function PreorderForm() {
         </div>
 
         <div className="space-y-3">
-          <Link href="/checkout">
+          {/* <Link href="/checkout">
             <Button 
               type="button"
               className="w-full bg-green-600 hover:bg-green-700 text-white"
             >
               Complete Order & Pay Now
             </Button>
-          </Link>
+          </Link> */}
           
           <Button 
             type="submit" 
             variant="outline"
-            className="w-full"
+            className="w-full bg-green-600 hover:bg-green-700 text-white"
             disabled={isLoading}
           >
-            {isLoading ? "Processing..." : "Just Get Updates (No Payment)"}
+            {isLoading ? "Processing..." : "Get Updates"}
           </Button>
         </div>
 
         <p className="text-xs text-gray-500 text-center">
-          Choose to complete your order with payment or just get updates about the book release.
+          Choose to get updates about the book release.
         </p>
       </form>
     </Card>

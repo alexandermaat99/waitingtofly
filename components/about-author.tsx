@@ -13,7 +13,7 @@ export function AboutAuthor() {
               <Image
                 src={AUTHOR_INFO.photo}
                 alt={`${AUTHOR_INFO.name} - Author Photo`}
-                width={400}
+                width={200}
                 height={384}
                 className="w-full h-full object-cover"
                 priority
@@ -45,9 +45,10 @@ export function AboutAuthor() {
               {AUTHOR_INFO.bio}
             </p>
             
-            <p className="text-lg text-gray-700 leading-relaxed">
-              {AUTHOR_INFO.personalNote}
-            </p>
+            <p 
+              className="text-lg text-gray-700 leading-relaxed"
+              dangerouslySetInnerHTML={{ __html: AUTHOR_INFO.personalNote }}
+            />
           </div>
 
           <div className="bg-green-50 border border-green-200 rounded-lg p-4">
@@ -58,7 +59,7 @@ export function AboutAuthor() {
           </div>
 
           <div className="space-y-4">
-            <div>
+            {/* <div>
               <h4 className="font-semibold text-gray-900 mb-3">Education:</h4>
               <div className="space-y-3">
                 {AUTHOR_INFO.education.map((edu, index) => (
@@ -69,7 +70,7 @@ export function AboutAuthor() {
                   </div>
                 ))}
               </div>
-            </div>
+            </div> */}
 
             <div>
               <h4 className="font-semibold text-gray-900">Previous Works:</h4>

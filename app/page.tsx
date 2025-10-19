@@ -1,8 +1,9 @@
 import { BookHero } from "@/components/book-hero";
 import { PreorderForm } from "@/components/preorder-form";
 import { AboutAuthor } from "@/components/about-author";
+import { Forward } from "@/components/forward";
 import { Testimonials } from "@/components/testimonials";
-import { SITE_CONFIG } from "@/lib/constants";
+import { SITE_CONFIG, FOOTER_TAGLINES } from "@/lib/constants";
 import Link from "next/link";
 
 export default function Home() {
@@ -26,10 +27,10 @@ export default function Home() {
           <div className="max-w-4xl mx-auto px-4">
             <div className="text-center mb-12">
               <h2 className="text-3xl font-bold text-gray-900 mb-4">
-                Get Early Access
+                Stay Connected
               </h2>
               <p className="text-lg text-gray-600">
-                Preorder now and be among the first to experience this captivating story
+              Be the first to hear about new releases, events, and reflections from Samly Maat. She shares short messages of encouragement to help you on your own journey of becoming.
               </p>
             </div>
             <PreorderForm />
@@ -39,6 +40,8 @@ export default function Home() {
         <Testimonials />
         
         <AboutAuthor />
+        
+        <Forward />
 
         {/* Footer */}
         <footer className="w-full bg-green-900 text-white py-16">
@@ -47,7 +50,7 @@ export default function Home() {
               <div>
                 <h3 className="text-xl font-bold mb-4">{SITE_CONFIG.name}</h3>
                 <p className="text-gray-400">
-                  {SITE_CONFIG.tagline}
+                  {FOOTER_TAGLINES.inspirational}
                 </p>
               </div>
               <div>
@@ -71,7 +74,7 @@ export default function Home() {
               </div>
             </div>
             <div className="border-t border-green-800 mt-8 pt-8 text-center text-gray-400">
-              <p>&copy; 2024 {SITE_CONFIG.name}. All rights reserved.</p>
+              <p>&copy; 2025 Dr. Samly Maat. All rights reserved.</p>
             </div>
           </div>
         </footer>
