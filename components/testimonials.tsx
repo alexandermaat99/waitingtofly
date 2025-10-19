@@ -1,5 +1,5 @@
 import { Card } from "@/components/ui/card";
-import { TESTIMONIALS, PREORDER_STATS } from "@/lib/constants";
+import { TESTIMONIALS } from "@/lib/constants";
 
 export function Testimonials() {
 

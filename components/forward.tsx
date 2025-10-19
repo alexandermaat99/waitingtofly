@@ -15,7 +15,7 @@ export function Forward() {
 
           <div className="prose prose-lg max-w-none">
             <p className="text-lg text-gray-700 leading-relaxed mb-6">
-              I first met <strong>Samly Maat</strong> at my 10-10-10 program. From the moment she spoke, I felt her fire: calm, focused, and unstoppable. She wasn't just writing a book; she was claiming her freedom. I knew then that when she spoke of rising, she spoke from truth, not imagination.
+              I first met <strong>Samly Maat</strong> at my 10-10-10 program. From the moment she spoke, I felt her fire: calm, focused, and unstoppable. She wasn&apos;t just writing a book; she was claiming her freedom. I knew then that when she spoke of rising, she spoke from truth, not imagination.
             </p>
             
             <p className="text-lg text-gray-700 leading-relaxed mb-6">
@@ -31,7 +31,7 @@ export function Forward() {
             </p>
 
             <p className="text-lg text-gray-700 leading-relaxed mb-6">
-              Samly's journey does not end here. <strong>Waiting to Fly</strong> is one chapter in a larger story, a rise from silence to strength, from survival to leadership. Every word carries the same truth: no matter where you begin, you can always rise higher.
+              Samly&apos;s journey does not end here. <strong>Waiting to Fly</strong> is one chapter in a larger story, a rise from silence to strength, from survival to leadership. Every word carries the same truth: no matter where you begin, you can always rise higher.
             </p>
 
             <p className="text-lg text-gray-700 leading-relaxed mb-8">
