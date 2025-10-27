@@ -473,20 +473,23 @@ function PaymentFormWrapper({ onSuccess }: PreorderFormWithPaymentProps) {
             shippingLastName: 'User',
             shippingAddressLine1: '123 Main St',
             shippingCity: 'Anytown',
+            shippingState: 'CA',
             shippingPostalCode: '12345',
+            shippingCountry: 'US',
+            shippingPhone: '555-555-5555',
             subtotal: 24.99,
             tax: 0,
             total: 24.99,
           }),
         });
 
-        const { clientSecret: secret, error } = await response.json();
+        const data = await response.json();
         
-        if (error) {
-          console.error('Payment intent error:', error);
+        if (!response.ok || data.error) {
+          console.error('Payment intent error:', data.error || 'Unknown error');
           // Continue anyway - we'll create a new one when user submits
         } else {
-          setClientSecret(secret);
+          setClientSecret(data.clientSecret);
         }
       } catch (err) {
         console.error('Failed to create initial payment intent:', err);

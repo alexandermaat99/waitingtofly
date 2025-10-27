@@ -52,7 +52,6 @@ export async function POST(request: NextRequest) {
     const paymentIntent = await stripe.paymentIntents.create({
       amount: formatAmountForStripe(amount),
       currency: 'usd',
-      payment_method_types: ['card', 'paypal'],
       automatic_payment_methods: {
         enabled: true,
         allow_redirects: 'always',
@@ -111,8 +110,9 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('Payment intent creation failed:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
-      { error: 'Failed to create payment intent' },
+      { error: `Failed to create payment intent: ${errorMessage}` },
       { status: 500 }
     );
   }
