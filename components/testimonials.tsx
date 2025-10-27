@@ -1,5 +1,6 @@
 import { Card } from "@/components/ui/card";
-import { TESTIMONIALS } from "@/lib/constants";
+import { TESTIMONIALS, BOOK_INFO } from "@/lib/constants";
+import Link from "next/link";
 
 export function Testimonials() {
 
@@ -10,7 +11,7 @@ export function Testimonials() {
           What Readers Are Saying
         </h2>
         <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-        The following words are drawn from early reader responses to Samly Maat’s first memoir, <span className="font-semibold italic">Before I Became a Refugee Girl</span>. They capture the spirit of courage, gratitude, and hope that continues in her next book, <span className="font-semibold italic">Waiting to Fly</span>.
+        The following words are drawn from early reader responses to Samly Maat&apos;s first memoir, <Link href={BOOK_INFO.previousBookUrl} target="_blank" rel="noopener noreferrer" className="font-semibold italic hover:text-green-600 transition-colors duration-200">Before I Became a Refugee Girl</Link>. They capture the spirit of courage, gratitude, and hope that continues in her next book, <span className="font-semibold italic">Waiting to Fly</span>.
         </p>
       </div>
 

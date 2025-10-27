@@ -8,7 +8,7 @@ import Link from "next/link";
 
 export function BookHero() {
   return (
-    <section className="w-full max-w-6xl mx-auto px-4 py-16">
+    <section id="about" className="w-full max-w-6xl mx-auto px-4 py-16">
       <div className="grid lg:grid-cols-2 gap-12 items-center">
         {/* Book Cover */}
         <div className="flex justify-center lg:justify-start">
@@ -47,10 +47,15 @@ export function BookHero() {
             <div className="flex items-center gap-2 text-sm text-gray-500 mb-4">
               <span>{BOOK_INFO.genre}</span>
             </div>
-            <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
+            <Link 
+              href={BOOK_INFO.previousBookUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block text-sm text-gray-600 bg-gray-50 p-3 rounded-lg hover:bg-gray-100 transition-colors duration-200"
+            >
               <p className="font-medium mb-1">Previous book in the series:</p>
               <p className="italic">&ldquo;{BOOK_INFO.previousBook}&rdquo;</p>
-            </div>
+            </Link>
           </div>
 
           <div className="space-y-4">
@@ -65,10 +70,15 @@ export function BookHero() {
             </div>
           </div>
 
-          <div className="flex justify-left">
+          <div className="flex gap-4">
             <Link href="/checkout">
               <Button size="lg" className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 text-lg">
                 Preorder Now
+              </Button>
+            </Link>
+            <Link href="#forward" scroll={true}>
+              <Button size="lg" variant="outline" className="border-green-600 text-green-600 hover:bg-green-50 px-8 py-3 text-lg">
+                Read Forward
               </Button>
             </Link>
           </div>

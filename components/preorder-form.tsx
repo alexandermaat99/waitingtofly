@@ -17,11 +17,34 @@ export function PreorderForm() {
     e.preventDefault();
     setIsLoading(true);
     
-    // Simulate API call
-    setTimeout(() => {
-      setIsSubmitted(true);
+    try {
+      const response = await fetch('/api/mailing-list', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email,
+          name,
+          source: 'website'
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setIsSubmitted(true);
+      } else {
+        // Handle error - you might want to show an error message
+        console.error('Subscription error:', data.error);
+        alert(data.error || 'Failed to subscribe. Please try again.');
+      }
+    } catch (error) {
+      console.error('Network error:', error);
+      alert('Network error. Please check your connection and try again.');
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   if (isSubmitted) {
@@ -32,22 +55,11 @@ export function PreorderForm() {
           You&apos;re All Set!
         </h3>
         <p className="text-gray-600 mb-4">
-          Thank you for your preorder! We&apos;ll send you updates about the book release and exclusive content.
+          Thank you for joining our mailing list! We&apos;ll send you updates about the book release and exclusive content.
         </p>
-        <div className="space-y-3">
-          <Link href="/checkout">
-            <Button className="w-full bg-green-600 hover:bg-green-700 text-white">
-              Complete Your Order
-            </Button>
-          </Link>
-          <Button 
-            onClick={() => setIsSubmitted(false)}
-            variant="outline"
-            className="w-full"
-          >
-            Preorder Another Copy
-          </Button>
-        </div>
+        <p className="text-sm text-gray-500">
+          Check your email for a confirmation message.
+        </p>
       </Card>
     );
   }

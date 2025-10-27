@@ -1,10 +1,11 @@
 import { Card } from "@/components/ui/card";
 import { AUTHOR_INFO } from "@/lib/constants";
 import Image from "next/image";
+import Link from "next/link";
 
 export function AboutAuthor() {
   return (
-    <section className="w-full max-w-6xl mx-auto px-4 py-16">
+    <section id="author" className="w-full max-w-6xl mx-auto px-4 py-16">
       <div className="grid lg:grid-cols-2 gap-12 items-center">
         {/* Author Photo */}
         <div className="flex justify-center lg:justify-start">
@@ -76,7 +77,16 @@ export function AboutAuthor() {
               <h4 className="font-semibold text-gray-900">Previous Works:</h4>
               <ul className="text-gray-700 space-y-1 mt-2">
                 {AUTHOR_INFO.previousWorks.map((work, index) => (
-                  <li key={index}>• &ldquo;{work.title}&rdquo; ({work.year}) - {work.achievement}</li>
+                  <li key={index}>
+                    <Link 
+                      href={work.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="hover:text-green-600 transition-colors duration-200"
+                    >
+                      • &ldquo;{work.title}&rdquo; ({work.year}) - {work.achievement}
+                    </Link>
+                  </li>
                 ))}
               </ul>
             </div>

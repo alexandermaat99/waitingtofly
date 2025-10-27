@@ -5,6 +5,7 @@ import { Forward } from "@/components/forward";
 import { Testimonials } from "@/components/testimonials";
 import { SITE_CONFIG, FOOTER_TAGLINES } from "@/lib/constants";
 import Link from "next/link";
+import { FaInstagram, FaFacebook, FaLinkedin } from "react-icons/fa";
 
 export default function Home() {
   return (
@@ -23,7 +24,7 @@ export default function Home() {
       <div className="flex-1">
         <BookHero />
         
-        <section className="w-full bg-gray-50 py-16">
+        <section id="preorder" className="w-full bg-gray-50 py-16">
           <div className="max-w-4xl mx-auto px-4">
             <div className="text-center mb-12">
               <h2 className="text-3xl font-bold text-gray-900 mb-4">
@@ -56,9 +57,9 @@ export default function Home() {
               <div>
                 <h4 className="font-semibold mb-4">Quick Links</h4>
                 <ul className="space-y-2 text-gray-400">
-                  <li><Link href="#about" className="hover:text-white">About the Book</Link></li>
-                  <li><Link href="#author" className="hover:text-white">About the Author</Link></li>
-                  <li><Link href="#preorder" className="hover:text-white">Preorder</Link></li>
+                  <li><Link href="#about" scroll={true} className="hover:text-white transition-colors duration-200">About the Book</Link></li>
+                  <li><Link href="#author" scroll={true} className="hover:text-white transition-colors duration-200">About the Author</Link></li>
+                  <li><Link href="#preorder" scroll={true} className="hover:text-white transition-colors duration-200">Preorder</Link></li>
                 </ul>
               </div>
               <div>
@@ -66,10 +67,21 @@ export default function Home() {
                 <p className="text-gray-400 mb-4">
                   Follow us for updates and exclusive content
                 </p>
+                <div className="flex flex-col space-y-2 mb-4">
+                  <Link href="#preorder" scroll={true} className="text-gray-400 hover:text-white transition-colors duration-200">
+                    Join Mailing List
+                  </Link>
+                </div>
                 <div className="flex space-x-4">
-                  <a href={SITE_CONFIG.socialLinks.twitter} className="text-gray-400 hover:text-white">Twitter</a>
-                  <a href={SITE_CONFIG.socialLinks.instagram} className="text-gray-400 hover:text-white">Instagram</a>
-                  <a href={SITE_CONFIG.socialLinks.facebook} className="text-gray-400 hover:text-white">Facebook</a>
+                  <a href={SITE_CONFIG.socialLinks.instagram} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors duration-200" aria-label="Instagram">
+                    <FaInstagram size={24} />
+                  </a>
+                  <a href={SITE_CONFIG.socialLinks.facebook} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors duration-200" aria-label="Facebook">
+                    <FaFacebook size={24} />
+                  </a>
+                  <a href={SITE_CONFIG.socialLinks.linkedin} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors duration-200" aria-label="LinkedIn">
+                    <FaLinkedin size={24} />
+                  </a>
                 </div>
               </div>
             </div>

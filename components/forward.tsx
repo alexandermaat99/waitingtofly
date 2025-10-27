@@ -2,7 +2,7 @@ import { Card } from "@/components/ui/card";
 
 export function Forward() {
   return (
-    <section className="w-full max-w-6xl mx-auto px-4 py-16">
+    <section id="forward" className="w-full max-w-6xl mx-auto px-4 py-16">
       <div className="max-w-4xl mx-auto">
         <Card className="p-8">
           <div className="text-center mb-8">

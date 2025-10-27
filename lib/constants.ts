@@ -11,6 +11,7 @@ export const BOOK_INFO = {
   preorderBonus: "Preorder now and get a singed copy of the book!",
   series: "Memoir Series",
   previousBook: "Before I Became a Refugee Girl: Life in Laos During the Vietnam War Era",
+  previousBookUrl: "https://a.co/d/623YZo9",
   coverImage: "/images/bookImage.png"
 } as const;
 
@@ -67,7 +68,8 @@ export const AUTHOR_INFO = {
     {
       title: "Before I Became a Refugee Girl: Life in Laos During the Vietnam War Era",
       year: "2023",
-      achievement: "First Book in Memoir Series"
+      achievement: "First Book in Memoir Series",
+      url: "https://a.co/d/623YZo9"
     }
   ]
 } as const;
@@ -107,9 +109,9 @@ export const SITE_CONFIG = {
   name: "Waiting to Fly",
   tagline: "A powerful memoir about resilience, hope, and the refugee experience during the Vietnam War era.",
   socialLinks: {
-    twitter: "#",
     instagram: "#", 
-    facebook: "#"
+    facebook: "#",
+    linkedin: "#"
   }
 } as const;
 

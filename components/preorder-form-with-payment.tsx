@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,7 +8,7 @@ import { Card } from "@/components/ui/card";
 import { BOOK_INFO, PREORDER_BENEFITS, BOOK_FORMATS } from "@/lib/constants";
 import { calculateTax } from "@/lib/tax-config";
 import { loadStripe } from '@stripe/stripe-js';
-import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
@@ -45,6 +45,7 @@ function PaymentForm({}: PreorderFormWithPaymentProps) {
   const { tax } = calculateTax(subtotal, shippingCountry, shippingState, isDigital);
   const total = subtotal + tax;
 
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -56,7 +57,7 @@ function PaymentForm({}: PreorderFormWithPaymentProps) {
     setError(null);
 
     try {
-      // Create payment intent with shipping information
+      // First create the payment intent with actual form data
       const response = await fetch('/api/create-payment-intent', {
         method: 'POST',
         headers: {
@@ -81,21 +82,19 @@ function PaymentForm({}: PreorderFormWithPaymentProps) {
         }),
       });
 
-      const { clientSecret, error: apiError } = await response.json();
+      const { error: apiError } = await response.json();
 
       if (apiError) {
         throw new Error(apiError);
       }
 
-      // Confirm payment with card element
-      const { error: stripeError } = await stripe.confirmCardPayment(clientSecret, {
-        payment_method: {
-          card: elements.getElement(CardElement)!,
-          billing_details: {
-            name,
-            email,
-          },
+      // Confirm payment with PaymentElement (supports both cards and PayPal)
+      const { error: stripeError } = await stripe.confirmPayment({
+        elements,
+        confirmParams: {
+          return_url: `${window.location.origin}/order-success`,
         },
+        redirect: 'if_required',
       });
 
       if (stripeError) {
@@ -365,26 +364,18 @@ function PaymentForm({}: PreorderFormWithPaymentProps) {
               <h5 className="font-medium text-gray-900">Payment Information</h5>
               
               <div>
-                <Label htmlFor="card">Card Details *</Label>
+                <Label className="text-sm font-medium text-gray-700 mb-2 block">Payment Details</Label>
                 <div className="p-3 border border-gray-300 rounded-md bg-white">
-                  <CardElement
+                  <PaymentElement
                     options={{
-                      style: {
-                        base: {
-                          fontSize: '16px',
-                          color: '#424770',
-                          '::placeholder': {
-                            color: '#aab7c4',
-                          },
-                        },
-                        invalid: {
-                          color: '#9e2146',
-                        },
-                      },
+                      layout: 'tabs',
+                      paymentMethodOrder: ['card', 'paypal'],
                     }}
-                    className="w-full"
                   />
                 </div>
+                <p className="text-xs text-gray-500 mt-2">
+                  Choose between credit/debit card or PayPal
+                </p>
               </div>
             </div>
 
@@ -461,10 +452,81 @@ function PaymentForm({}: PreorderFormWithPaymentProps) {
   );
 }
 
-export function PreorderFormWithPayment({ onSuccess }: PreorderFormWithPaymentProps) {
+function PaymentFormWrapper({ onSuccess }: PreorderFormWithPaymentProps) {
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Create a minimal payment intent to get clientSecret
+    const createInitialPaymentIntent = async () => {
+      try {
+        const response = await fetch('/api/create-payment-intent', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email: 'temp@example.com',
+            name: 'Temp User',
+            bookFormat: 'hardcover',
+            shippingFirstName: 'Temp',
+            shippingLastName: 'User',
+            shippingAddressLine1: '123 Main St',
+            shippingCity: 'Anytown',
+            shippingPostalCode: '12345',
+            subtotal: 24.99,
+            tax: 0,
+            total: 24.99,
+          }),
+        });
+
+        const { clientSecret: secret, error } = await response.json();
+        
+        if (error) {
+          console.error('Payment intent error:', error);
+          // Continue anyway - we'll create a new one when user submits
+        } else {
+          setClientSecret(secret);
+        }
+      } catch (err) {
+        console.error('Failed to create initial payment intent:', err);
+        // Continue anyway - we'll create a new one when user submits
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    createInitialPaymentIntent();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="w-full max-w-4xl mx-auto p-8">
+        <div className="text-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
+          <p className="mt-2 text-gray-600">Loading payment options...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!clientSecret) {
+    return (
+      <div className="w-full max-w-4xl mx-auto p-8">
+        <div className="text-center py-8">
+          <p className="text-red-600">Failed to initialize payment. Please refresh the page.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <Elements stripe={stripePromise}>
+    <Elements stripe={stripePromise} options={{ clientSecret }}>
       <PaymentForm onSuccess={onSuccess} />
     </Elements>
   );
+}
+
+export function PreorderFormWithPayment({ onSuccess }: PreorderFormWithPaymentProps) {
+  return <PaymentFormWrapper onSuccess={onSuccess} />;
 }
