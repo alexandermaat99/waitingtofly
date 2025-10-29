@@ -4,17 +4,15 @@ import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { SiteConfigForm } from './site-config-form';
 import { AdminManagement } from './admin-management';
 import { MailingListManagement } from './mailing-list-management';
-import { isSuperAdmin } from '@/lib/admin';
 
 interface SiteConfig {
   id: string;
   config_key: string;
-  config_value: any;
+  config_value: unknown;
   description: string;
   category: string;
   is_active: boolean;
@@ -103,7 +101,7 @@ export function AdminDashboard() {
   const activeConfigs = filteredConfigs.filter(config => config.is_active);
   const inactiveConfigs = filteredConfigs.filter(config => !config.is_active);
 
-  const handleConfigUpdate = async (key: string, value: any, description?: string) => {
+  const handleConfigUpdate = async (key: string, value: unknown, description?: string) => {
     try {
       const response = await fetch('/api/admin/site-config', {
         method: 'PUT',

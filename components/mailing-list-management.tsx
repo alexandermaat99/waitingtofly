@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -73,9 +73,9 @@ export function MailingListManagement() {
 
   useEffect(() => {
     fetchSubscribers();
-  }, [pagination.page, filters]);
+  }, [fetchSubscribers]);
 
-  const fetchSubscribers = async () => {
+  const fetchSubscribers = useCallback(async () => {
     try {
       setLoading(true);
       const params = new URLSearchParams({
@@ -97,7 +97,7 @@ export function MailingListManagement() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [pagination.page, pagination.limit, filters]);
 
   const handleFilterChange = (key: string, value: string) => {
     setFilters(prev => ({ ...prev, [key]: value }));

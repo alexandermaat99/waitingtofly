@@ -1,8 +1,6 @@
-import { DeployButton } from "@/components/deploy-button";
 import { EnvVarWarning } from "@/components/env-var-warning";
 import { AuthButton } from "@/components/auth-button";
 import { hasEnvVars } from "@/lib/utils";
-import { getSiteConfigData } from "@/lib/site-config";
 import { isAdmin, getAdminRole } from "@/lib/admin";
 import Link from "next/link";
 
@@ -11,7 +9,6 @@ export default async function ProtectedLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const siteConfig = await getSiteConfigData();
   const admin = await isAdmin();
   const adminRole = await getAdminRole();
 

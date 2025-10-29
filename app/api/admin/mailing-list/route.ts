@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { requireAdmin } from '@/lib/admin';
 
 // GET - Fetch mailing list subscribers with pagination and filtering
 export async function GET(request: NextRequest) {
@@ -73,7 +72,13 @@ export async function PUT(request: NextRequest) {
 
     const supabase = await createClient();
 
-    const { id, status, notes, first_name, last_name } = await request.json();
+    const { id, status, notes, first_name, last_name }: {
+      id: string;
+      status?: string;
+      notes?: string;
+      first_name?: string;
+      last_name?: string;
+    } = await request.json();
 
     if (!id) {
       return NextResponse.json({ error: 'Subscriber ID is required' }, { status: 400 });
