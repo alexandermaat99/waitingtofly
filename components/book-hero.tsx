@@ -2,20 +2,60 @@
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { BOOK_INFO } from "@/lib/constants";
+import { getBookInfo } from "@/lib/site-config-client";
 import Image from "next/image";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
 export function BookHero() {
+  const [bookInfo, setBookInfo] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchBookInfo = async () => {
+      try {
+        const data = await getBookInfo();
+        setBookInfo(data);
+      } catch (error) {
+        console.error('Error fetching book info:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchBookInfo();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <section id="about" className="w-full max-w-6xl mx-auto px-4 py-16">
+        <div className="text-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
+          <p className="mt-2 text-gray-600">Loading book information...</p>
+        </div>
+      </section>
+    );
+  }
+
+  if (!bookInfo) {
+    return (
+      <section id="about" className="w-full max-w-6xl mx-auto px-4 py-16">
+        <div className="text-center py-8">
+          <p className="text-red-600">Failed to load book information.</p>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section id="about" className="w-full max-w-6xl mx-auto px-4 py-16">
       <div className="grid lg:grid-cols-2 gap-12 items-center">
         {/* Book Cover */}
         <div className="flex justify-center lg:justify-start">
-          {BOOK_INFO.coverImage ? (
+          {bookInfo.coverImage ? (
             <Image
-              src={BOOK_INFO.coverImage}
-              alt={`${BOOK_INFO.title} - Book Cover`}
+              src={bookInfo.coverImage}
+              alt={`${bookInfo.title} - Book Cover`}
               width={500}
               height={384}
               className="max-w-full h-auto object-contain"
@@ -37,35 +77,35 @@ export function BookHero() {
           <div>
             <div className="mb-2">
               <span className="inline-block bg-green-100 text-green-800 text-sm font-medium px-3 py-1 rounded-full">
-                {BOOK_INFO.series}
+                {bookInfo.series}
               </span>
             </div>
             <h1 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
-              {BOOK_INFO.title}
+              {bookInfo.title}
             </h1>
-            <p className="text-xl text-gray-600 mb-2">by {BOOK_INFO.author}</p>
+            <p className="text-xl text-gray-600 mb-2">by {bookInfo.author}</p>
             <div className="flex items-center gap-2 text-sm text-gray-500 mb-4">
-              <span>{BOOK_INFO.genre}</span>
+              <span>{bookInfo.genre}</span>
             </div>
             <Link 
-              href={BOOK_INFO.previousBookUrl}
+              href={bookInfo.previousBookUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="block text-sm text-gray-600 bg-gray-50 p-3 rounded-lg hover:bg-gray-100 transition-colors duration-200"
             >
               <p className="font-medium mb-1">Previous book in the series:</p>
-              <p className="italic">&ldquo;{BOOK_INFO.previousBook}&rdquo;</p>
+              <p className="italic">&ldquo;{bookInfo.previousBook}&rdquo;</p>
             </Link>
           </div>
 
           <div className="space-y-4">
             <p className="text-lg text-gray-700 leading-relaxed">
-              {BOOK_INFO.description}
+              {bookInfo.description}
             </p>
             
             <div className="bg-green-50 border border-green-200 rounded-lg p-4">
               <p className="text-green-800 font-medium">
-                🎉 {BOOK_INFO.preorderBonus}
+                🎉 {bookInfo.preorderBonus}
               </p>
             </div>
           </div>
@@ -84,8 +124,8 @@ export function BookHero() {
           </div>
 
           <div className="text-sm text-gray-500">
-            <p>Expected Release: {BOOK_INFO.releaseDate}</p>
-            <p>Available in: {BOOK_INFO.formats.join(", ")}</p>
+            <p>Expected Release: {bookInfo.releaseDate}</p>
+            <p>Available in: {bookInfo.formats.join(", ")}</p>
           </div>
         </div>
       </div>

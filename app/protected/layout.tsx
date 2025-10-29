@@ -2,14 +2,19 @@ import { DeployButton } from "@/components/deploy-button";
 import { EnvVarWarning } from "@/components/env-var-warning";
 import { AuthButton } from "@/components/auth-button";
 import { hasEnvVars } from "@/lib/utils";
-import { SITE_CONFIG } from "@/lib/constants";
+import { getSiteConfigData } from "@/lib/site-config";
+import { isAdmin, getAdminRole } from "@/lib/admin";
 import Link from "next/link";
 
-export default function ProtectedLayout({
+export default async function ProtectedLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const siteConfig = await getSiteConfigData();
+  const admin = await isAdmin();
+  const adminRole = await getAdminRole();
+
   return (
     <main className="min-h-screen flex flex-col items-center">
       <div className="flex-1 w-full flex flex-col gap-20 items-center">
@@ -17,10 +22,17 @@ export default function ProtectedLayout({
           <div className="w-full max-w-5xl flex justify-between items-center p-3 px-5 text-sm">
             <div className="flex gap-5 items-center font-semibold">
               <Link href={"/"} className="text-xl font-bold text-green-600">
-                {SITE_CONFIG.name}
+                {'Waiting to Fly Admin Dashboard'}
               </Link>
               <div className="flex items-center gap-2">
-                <DeployButton />
+                {admin && (
+                  <Link 
+                    href="/protected/admin" 
+                    className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors"
+                  >
+                    {adminRole === 'super_admin' ? 'Super Admin' : 'Admin'}
+                  </Link>
+                )}
               </div>
             </div>
             {!hasEnvVars ? <EnvVarWarning /> : <AuthButton />}
@@ -32,15 +44,7 @@ export default function ProtectedLayout({
 
         <footer className="w-full flex items-center justify-center border-t mx-auto text-center text-xs gap-8 py-16">
           <p>
-            Powered by{" "}
-            <a
-              href="https://supabase.com/?utm_source=create-next-app&utm_medium=template&utm_term=nextjs"
-              target="_blank"
-              className="font-bold hover:underline"
-              rel="noreferrer"
-            >
-              Supabase
-            </a>
+
           </p>
         </footer>
       </div>

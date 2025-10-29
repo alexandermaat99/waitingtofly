@@ -1,19 +1,61 @@
+"use client";
+
 import { Card } from "@/components/ui/card";
-import { AUTHOR_INFO } from "@/lib/constants";
+import { getAuthorInfo } from "@/lib/site-config-client";
 import Image from "next/image";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
 export function AboutAuthor() {
+  const [authorInfo, setAuthorInfo] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchAuthorInfo = async () => {
+      try {
+        const data = await getAuthorInfo();
+        setAuthorInfo(data);
+      } catch (error) {
+        console.error('Error fetching author info:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchAuthorInfo();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <section id="author" className="w-full max-w-6xl mx-auto px-4 py-16">
+        <div className="text-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
+          <p className="mt-2 text-gray-600">Loading author information...</p>
+        </div>
+      </section>
+    );
+  }
+
+  if (!authorInfo) {
+    return (
+      <section id="author" className="w-full max-w-6xl mx-auto px-4 py-16">
+        <div className="text-center py-8">
+          <p className="text-red-600">Failed to load author information.</p>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section id="author" className="w-full max-w-6xl mx-auto px-4 py-16">
       <div className="grid lg:grid-cols-2 gap-12 items-center">
         {/* Author Photo */}
         <div className="flex justify-center lg:justify-start">
           <Card className="overflow-hidden border-2 border-gray-200">
-            {AUTHOR_INFO.photo ? (
+            {authorInfo.photo ? (
               <Image
-                src={AUTHOR_INFO.photo}
-                alt={`${AUTHOR_INFO.name} - Author Photo`}
+                src={authorInfo.photo}
+                alt={`${authorInfo.name} - Author Photo`}
                 width={200}
                 height={384}
                 className="w-full h-full object-cover"
@@ -37,33 +79,33 @@ export function AboutAuthor() {
               About the Author
             </h2>
             <h3 className="text-xl text-green-600 font-semibold mb-4">
-              {AUTHOR_INFO.name}
+              {authorInfo.name}
             </h3>
           </div>
 
           <div className="space-y-4">
             <p className="text-lg text-gray-700 leading-relaxed">
-              {AUTHOR_INFO.bio}
+              {authorInfo.bio}
             </p>
             
             <p 
               className="text-lg text-gray-700 leading-relaxed"
-              dangerouslySetInnerHTML={{ __html: AUTHOR_INFO.personalNote }}
+              dangerouslySetInnerHTML={{ __html: authorInfo.personalNote }}
             />
           </div>
 
           <div className="bg-green-50 border border-green-200 rounded-lg p-4">
             <p className="text-green-800 font-medium italic">
-              &ldquo;{AUTHOR_INFO.quote}&rdquo;
+              &ldquo;{authorInfo.quote}&rdquo;
             </p>
-            <p className="text-green-700 text-sm mt-2">— {AUTHOR_INFO.name}</p>
+            <p className="text-green-700 text-sm mt-2">— {authorInfo.name}</p>
           </div>
 
           <div className="space-y-4">
             {/* <div>
               <h4 className="font-semibold text-gray-900 mb-3">Education:</h4>
               <div className="space-y-3">
-                {AUTHOR_INFO.education.map((edu, index) => (
+                {authorInfo.education.map((edu, index) => (
                   <div key={index} className="bg-gray-50 p-3 rounded-lg">
                     <div className="font-medium text-gray-900">{edu.degree}</div>
                     <div className="text-sm text-green-600 font-medium">{edu.school}</div>
@@ -76,7 +118,7 @@ export function AboutAuthor() {
             <div>
               <h4 className="font-semibold text-gray-900">Previous Works:</h4>
               <ul className="text-gray-700 space-y-1 mt-2">
-                {AUTHOR_INFO.previousWorks.map((work, index) => (
+                {authorInfo.previousWorks.map((work, index) => (
                   <li key={index}>
                     <Link 
                       href={work.url}

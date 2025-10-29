@@ -1,8 +1,54 @@
+"use client";
+
 import { Card } from "@/components/ui/card";
-import { TESTIMONIALS, BOOK_INFO } from "@/lib/constants";
+import { getTestimonials, getBookInfo } from "@/lib/site-config-client";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
 export function Testimonials() {
+  const [testimonials, setTestimonials] = useState<any[]>([]);
+  const [bookInfo, setBookInfo] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [testimonialsData, bookData] = await Promise.all([
+          getTestimonials(),
+          getBookInfo()
+        ]);
+        setTestimonials(testimonialsData || []);
+        setBookInfo(bookData);
+      } catch (error) {
+        console.error('Error fetching testimonials data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <section className="w-full max-w-6xl mx-auto px-4 py-16">
+        <div className="text-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
+          <p className="mt-2 text-gray-600">Loading testimonials...</p>
+        </div>
+      </section>
+    );
+  }
+
+  if (!testimonials || testimonials.length === 0) {
+    return (
+      <section className="w-full max-w-6xl mx-auto px-4 py-16">
+        <div className="text-center py-8">
+          <p className="text-red-600">Failed to load testimonials.</p>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="w-full max-w-6xl mx-auto px-4 py-16">
@@ -11,12 +57,12 @@ export function Testimonials() {
           What Readers Are Saying
         </h2>
         <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-        The following words are drawn from early reader responses to Samly Maat&apos;s first memoir, <Link href={BOOK_INFO.previousBookUrl} target="_blank" rel="noopener noreferrer" className="font-semibold italic hover:text-green-600 transition-colors duration-200">Before I Became a Refugee Girl</Link>. They capture the spirit of courage, gratitude, and hope that continues in her next book, <span className="font-semibold italic">Waiting to Fly</span>.
+        The following words are drawn from early reader responses to Samly Maat&apos;s first memoir, <Link href={bookInfo?.previousBookUrl || '#'} target="_blank" rel="noopener noreferrer" className="font-semibold italic hover:text-green-600 transition-colors duration-200">Before I Became a Refugee Girl</Link>. They capture the spirit of courage, gratitude, and hope that continues in her next book, <span className="font-semibold italic">Waiting to Fly</span>.
         </p>
       </div>
 
       <div className="grid md:grid-cols-3 gap-8">
-        {TESTIMONIALS.map((testimonial, index) => (
+        {testimonials.map((testimonial, index) => (
           <Card key={index} className="p-6 bg-white border border-gray-200 hover:shadow-lg transition-shadow">
             <div className="space-y-4">
               <div className="text-yellow-400 text-2xl">

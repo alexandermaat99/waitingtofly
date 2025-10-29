@@ -1,13 +1,47 @@
+"use client";
+
 import { BookHero } from "@/components/book-hero";
 import { PreorderForm } from "@/components/preorder-form";
 import { AboutAuthor } from "@/components/about-author";
 import { Forward } from "@/components/forward";
 import { Testimonials } from "@/components/testimonials";
-import { SITE_CONFIG, FOOTER_TAGLINES } from "@/lib/constants";
+import { getSiteConfigData } from "@/lib/site-config-client";
 import Link from "next/link";
 import { FaInstagram, FaFacebook, FaLinkedin } from "react-icons/fa";
+import { useEffect, useState } from "react";
 
 export default function Home() {
+  const [siteConfig, setSiteConfig] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const siteData = await getSiteConfigData();
+        setSiteConfig(siteData);
+      } catch (error) {
+        console.error('Error fetching site data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <main className="min-h-screen flex flex-col">
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
+            <p className="mt-2 text-gray-600">Loading...</p>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="min-h-screen flex flex-col">
 
@@ -49,9 +83,9 @@ export default function Home() {
           <div className="max-w-6xl mx-auto px-4">
             <div className="grid md:grid-cols-3 gap-8">
               <div>
-                <h3 className="text-xl font-bold mb-4">{SITE_CONFIG.name}</h3>
+                <h3 className="text-xl font-bold mb-4">{siteConfig?.name || 'Waiting to Fly'}</h3>
                 <p className="text-gray-400">
-                  {FOOTER_TAGLINES.inspirational}
+                  {siteConfig?.tagline || 'A powerful memoir about resilience, hope, and the refugee experience.'}
                 </p>
               </div>
               <div>
@@ -73,13 +107,13 @@ export default function Home() {
                   </Link>
                 </div>
                 <div className="flex space-x-4">
-                  <a href={SITE_CONFIG.socialLinks.instagram} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors duration-200" aria-label="Instagram">
+                  <a href={siteConfig?.socialLinks?.instagram || '#'} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors duration-200" aria-label="Instagram">
                     <FaInstagram size={24} />
                   </a>
-                  <a href={SITE_CONFIG.socialLinks.facebook} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors duration-200" aria-label="Facebook">
+                  <a href={siteConfig?.socialLinks?.facebook || '#'} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors duration-200" aria-label="Facebook">
                     <FaFacebook size={24} />
                   </a>
-                  <a href={SITE_CONFIG.socialLinks.linkedin} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors duration-200" aria-label="LinkedIn">
+                  <a href={siteConfig?.socialLinks?.linkedin || '#'} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors duration-200" aria-label="LinkedIn">
                     <FaLinkedin size={24} />
                   </a>
                 </div>

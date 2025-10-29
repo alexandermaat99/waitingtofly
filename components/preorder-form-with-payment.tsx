@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { BOOK_INFO, PREORDER_BENEFITS, BOOK_FORMATS } from "@/lib/constants";
+import { getBookInfo, getPreorderBenefits, getBookFormats } from "@/lib/site-config-client";
 import { calculateTax } from "@/lib/tax-config";
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
@@ -25,6 +25,11 @@ function PaymentForm({}: PreorderFormWithPaymentProps) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Data from database
+  const [bookInfo, setBookInfo] = useState<any>(null);
+  const [bookFormats, setBookFormats] = useState<any>(null);
+  const [preorderBenefits, setPreorderBenefits] = useState<any[]>([]);
+
   // Shipping information state
   const [shippingFirstName, setShippingFirstName] = useState("");
   const [shippingLastName, setShippingLastName] = useState("");
@@ -39,8 +44,28 @@ function PaymentForm({}: PreorderFormWithPaymentProps) {
   const stripe = useStripe();
   const elements = useElements();
 
+  // Fetch data from database
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [bookData, formatsData, benefitsData] = await Promise.all([
+          getBookInfo(),
+          getBookFormats(),
+          getPreorderBenefits()
+        ]);
+        setBookInfo(bookData);
+        setBookFormats(formatsData);
+        setPreorderBenefits(benefitsData || []);
+      } catch (error) {
+        console.error('Error fetching payment form data:', error);
+      }
+    };
+
+    fetchData();
+  }, []);
+
   // Tax calculation using centralized config
-  const subtotal = BOOK_FORMATS[bookFormat as keyof typeof BOOK_FORMATS].price;
+  const subtotal = bookFormats?.[bookFormat as keyof typeof bookFormats]?.price || 24.99;
   const isDigital = ['ebook', 'audiobook'].includes(bookFormat);
   const { tax } = calculateTax(subtotal, shippingCountry, shippingState, isDigital);
   const total = subtotal + tax;
@@ -126,7 +151,7 @@ function PaymentForm({}: PreorderFormWithPaymentProps) {
 
       <div className="text-center mb-8">
         <h3 className="text-3xl font-bold text-gray-900 mb-2">
-          Preorder &ldquo;{BOOK_INFO.title}&rdquo;
+          Preorder &ldquo;{bookInfo?.title || 'Waiting to Fly'}&rdquo;
         </h3>
         <p className="text-gray-600">
           Complete your order with secure payment
@@ -177,7 +202,7 @@ function PaymentForm({}: PreorderFormWithPaymentProps) {
                   onChange={(e) => setBookFormat(e.target.value)}
                   className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
                 >
-                  {Object.entries(BOOK_FORMATS).map(([key, format]) => (
+                  {Object.entries(bookFormats || {}).map(([key, format]) => (
                     <option key={key} value={key}>
                       {format.name} - ${format.price}
                     </option>
@@ -407,12 +432,12 @@ function PaymentForm({}: PreorderFormWithPaymentProps) {
           <div className="space-y-4">
             <div className="flex justify-between">
               <span className="text-gray-600">Book Format:</span>
-              <span className="font-medium">{BOOK_FORMATS[bookFormat as keyof typeof BOOK_FORMATS].name}</span>
+              <span className="font-medium">{bookFormats?.[bookFormat as keyof typeof bookFormats]?.name || 'Hardcover'}</span>
             </div>
             
             <div className="flex justify-between">
               <span className="text-gray-600">Book:</span>
-              <span className="font-medium">{BOOK_INFO.title}</span>
+              <span className="font-medium">{bookInfo?.title || 'Waiting to Fly'}</span>
             </div>
             
             <div className="flex justify-between">
@@ -441,7 +466,7 @@ function PaymentForm({}: PreorderFormWithPaymentProps) {
           <div className="mt-6 p-4 bg-green-50 rounded-md">
             <h5 className="font-medium text-green-800 mb-2">Preorder Benefits</h5>
             <ul className="text-sm text-green-700 space-y-1">
-              {PREORDER_BENEFITS.map((benefit, index) => (
+              {(preorderBenefits || []).map((benefit, index) => (
                 <li key={index}>• {benefit}</li>
               ))}
             </ul>

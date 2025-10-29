@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { stripe, formatAmountForStripe } from '@/lib/stripe';
 import { createClient } from '@/lib/supabase/server';
-import { BOOK_FORMATS } from '@/lib/constants';
+import { getBookFormats } from '@/lib/site-config';
 
 export async function POST(request: NextRequest) {
   try {
@@ -45,8 +45,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Use the calculated total from the frontend, or fallback to base price from constants
-    const amount = total || BOOK_FORMATS[bookFormat as keyof typeof BOOK_FORMATS].price || BOOK_FORMATS.hardcover.price;
+    // Get book formats from database
+    const bookFormats = await getBookFormats();
+    
+    // Use the calculated total from the frontend, or fallback to base price from database
+    const amount = total || bookFormats?.[bookFormat as keyof typeof bookFormats]?.price || bookFormats?.hardcover?.price || 24.99;
 
     // Create payment intent with shipping information
     const paymentIntent = await stripe.paymentIntents.create({

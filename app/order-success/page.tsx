@@ -1,8 +1,40 @@
+"use client";
+
 import { Card } from "@/components/ui/card";
-import { BOOK_INFO } from "@/lib/constants";
+import { getBookInfo } from "@/lib/site-config-client";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
 export default function OrderSuccessPage() {
+  const [bookInfo, setBookInfo] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchBookInfo = async () => {
+      try {
+        const data = await getBookInfo();
+        setBookInfo(data);
+      } catch (error) {
+        console.error('Error fetching book info:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchBookInfo();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <main className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
+          <p className="mt-2 text-gray-600">Loading...</p>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4">
       <Card className="w-full max-w-md mx-auto p-8 text-center">
@@ -13,7 +45,7 @@ export default function OrderSuccessPage() {
         </h1>
         
         <p className="text-gray-600 mb-6">
-          Thank you for preordering &ldquo;{BOOK_INFO.title}&rdquo;! 
+          Thank you for preordering &ldquo;{bookInfo?.title || 'Waiting to Fly'}&rdquo;! 
           You&apos;ll receive a confirmation email shortly with your order details and shipping information.
         </p>
 
@@ -23,7 +55,7 @@ export default function OrderSuccessPage() {
             <li>• Your book will be shipped to the address you provided</li>
             <li>• Free shipping on all preorders</li>
             <li>• You&apos;ll receive tracking information when shipped</li>
-            <li>• Expected delivery: {BOOK_INFO.releaseDate}</li>
+            <li>• Expected delivery: {bookInfo?.releaseDate || 'December 2025'}</li>
           </ul>
         </div>
 

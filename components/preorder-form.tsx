@@ -70,7 +70,7 @@ export function PreorderForm() {
           Join our mailing list
         </h3>
         {/* <p className="text-gray-600">
-          Be among the first to receive &ldquo;{BOOK_INFO.title}&rdquo; when it&apos;s released.
+          Be among the first to receive &ldquo;Waiting to Fly&rdquo; when it&apos;s released.
         </p> */}
       </div>
 
