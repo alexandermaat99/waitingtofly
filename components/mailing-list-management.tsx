@@ -71,10 +71,6 @@ export function MailingListManagement() {
     { value: 'manual', label: 'Manual' }
   ];
 
-  useEffect(() => {
-    fetchSubscribers();
-  }, [fetchSubscribers]);
-
   const fetchSubscribers = useCallback(async () => {
     try {
       setLoading(true);
@@ -91,13 +87,17 @@ export function MailingListManagement() {
 
       const data = await response.json();
       setSubscribers(data.data || []);
-      setPagination(data.pagination || pagination);
+      setPagination(prev => data.pagination || prev);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setLoading(false);
     }
   }, [pagination.page, pagination.limit, filters]);
+
+  useEffect(() => {
+    fetchSubscribers();
+  }, [fetchSubscribers]);
 
   const handleFilterChange = (key: string, value: string) => {
     setFilters(prev => ({ ...prev, [key]: value }));

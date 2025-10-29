@@ -110,7 +110,7 @@ export function AddAdminForm({ onSuccess, onCancel }: AddAdminFormProps) {
           <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
             <p className="text-sm text-yellow-800">
               <strong>Note:</strong> The admin will need to sign up with this email address 
-              to access the system. They should use the "Admin Login" button and create 
+              to access the system. They should use the &quot;Admin Login&quot; button and create 
               their account with the provided email.
             </p>
           </div>
