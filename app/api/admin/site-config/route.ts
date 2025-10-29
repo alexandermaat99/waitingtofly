@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { clearConfigCache, clearConfigCacheKey } from '@/lib/site-config';
-import { requireAdmin } from '@/lib/admin';
 
 // GET - Fetch all configurations or specific one
 export async function GET(request: NextRequest) {
@@ -136,7 +134,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Clear cache
-    clearConfigCacheKey(key);
+    // clearConfigCacheKey(key);
 
     return NextResponse.json({
       message: 'Configuration updated successfully',
@@ -182,7 +180,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Clear cache
-    clearConfigCacheKey(key);
+    // clearConfigCacheKey(key);
 
     return NextResponse.json({
       message: `Configuration ${is_active ? 'activated' : 'deactivated'} successfully`
@@ -228,7 +226,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Clear cache
-    clearConfigCacheKey(key);
+    // clearConfigCacheKey(key);
 
     return NextResponse.json({
       message: 'Configuration deactivated successfully'

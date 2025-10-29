@@ -118,7 +118,7 @@ export function AboutAuthor() {
             <div>
               <h4 className="font-semibold text-gray-900">Previous Works:</h4>
               <ul className="text-gray-700 space-y-1 mt-2">
-                {authorInfo.previousWorks.map((work, index) => (
+                {authorInfo.previousWorks.map((work: any, index: number) => (
                   <li key={index}>
                     <Link 
                       href={work.url}

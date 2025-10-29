@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { requireSuperAdmin } from '@/lib/admin';
 
 // GET - Fetch all admins
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     // Check super admin authentication
     await requireSuperAdmin();
@@ -125,7 +125,7 @@ export async function PATCH(request: NextRequest) {
 
     const supabase = await createClient();
 
-    const updateData: any = {};
+    const updateData: Record<string, unknown> = {};
     if (typeof is_active === 'boolean') updateData.is_active = is_active;
     if (typeof is_super_admin === 'boolean') updateData.is_super_admin = is_super_admin;
 

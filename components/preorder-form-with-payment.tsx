@@ -202,7 +202,7 @@ function PaymentForm({}: PreorderFormWithPaymentProps) {
                   onChange={(e) => setBookFormat(e.target.value)}
                   className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
                 >
-                  {Object.entries(bookFormats || {}).map(([key, format]) => (
+                  {Object.entries(bookFormats || {}).map(([key, format]: [string, any]) => (
                     <option key={key} value={key}>
                       {format.name} - ${format.price}
                     </option>
