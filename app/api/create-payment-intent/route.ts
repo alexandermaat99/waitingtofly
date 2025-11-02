@@ -221,7 +221,9 @@ export async function POST(request: NextRequest) {
     let usingStripeTax = false;
     
     // Check if payment intent was created with automatic_tax enabled
-    if (paymentIntent.automatic_tax?.enabled) {
+    // Type assertion needed because automatic_tax may not be in type definition yet
+    const paymentIntentWithTax = paymentIntent as any;
+    if (paymentIntentWithTax.automatic_tax?.enabled) {
       try {
         // Retrieve payment intent to get Stripe Tax calculation
         // Stripe Tax calculates asynchronously, so we retrieve it after creation
