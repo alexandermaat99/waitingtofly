@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { SiteConfigForm } from './site-config-form';
 import { AdminManagement } from './admin-management';
 import { MailingListManagement } from './mailing-list-management';
+import { OrdersManagement } from './orders-management';
 
 interface SiteConfig {
   id: string;
@@ -27,10 +28,26 @@ export function AdminDashboard() {
   const [selectedConfig, setSelectedConfig] = useState<SiteConfig | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [activeTab, setActiveTab] = useState<'config' | 'admins' | 'mailing'>('config');
+  const [activeTab, setActiveTab] = useState<'config' | 'admins' | 'mailing' | 'orders'>(() => {
+    // Initialize from localStorage if available
+    if (typeof window !== 'undefined') {
+      const savedTab = localStorage.getItem('adminDashboardActiveTab');
+      if (savedTab && ['config', 'admins', 'mailing', 'orders'].includes(savedTab)) {
+        return savedTab as 'config' | 'admins' | 'mailing' | 'orders';
+      }
+    }
+    return 'config';
+  });
   const [isSuperAdminUser, setIsSuperAdminUser] = useState(false);
 
   const categories = ['all', 'book', 'author', 'testimonials', 'preorder', 'stats', 'site'];
+
+  // Save active tab to localStorage whenever it changes
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('adminDashboardActiveTab', activeTab);
+    }
+  }, [activeTab]);
 
   useEffect(() => {
     fetchConfigs();
@@ -204,6 +221,13 @@ export function AdminDashboard() {
             >
               Mailing List
             </Button>
+            <Button
+              variant={activeTab === 'orders' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setActiveTab('orders')}
+            >
+              Orders
+            </Button>
             {isSuperAdminUser && (
               <Button
                 variant={activeTab === 'admins' ? 'default' : 'outline'}
@@ -328,6 +352,8 @@ export function AdminDashboard() {
         </div>
       ) : activeTab === 'admins' ? (
         <AdminManagement />
+      ) : activeTab === 'orders' ? (
+        <OrdersManagement />
       ) : (
         <MailingListManagement />
       )}

@@ -124,6 +124,18 @@ CREATE POLICY "Users can view their own orders" ON public.orders
     TO authenticated
     USING (email = (auth.jwt() ->> 'email'));
 
+-- Policy: Admins can view all orders
+CREATE POLICY "Admins can view all orders" ON public.orders
+    FOR SELECT
+    TO authenticated
+    USING (
+        EXISTS (
+            SELECT 1 FROM public.admins 
+            WHERE email = auth.jwt() ->> 'email' 
+            AND is_active = true
+        )
+    );
+
 -- Policy: Anyone can create orders (for checkout process)
 CREATE POLICY "Anyone can create orders" ON public.orders
     FOR INSERT

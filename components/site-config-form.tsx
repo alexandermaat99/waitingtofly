@@ -277,11 +277,45 @@ export function SiteConfigForm({ config, onSave, onCancel }: SiteConfigFormProps
         return (
           <div className="space-y-4">
             <h3 className="font-medium">Book Format Pricing</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Format keys should match the format type (e.g., "paperback", "hardcover"). Use lowercase, no spaces.
+            </p>
             {Object.entries(formData).map(([formatKey, formatData]: [string, any]) => (
               <Card key={formatKey} className="p-4">
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <Label className="text-sm font-medium text-gray-700">{formatKey.charAt(0).toUpperCase() + formatKey.slice(1)}</Label>
+                    <div className="flex-1">
+                      <Label htmlFor={`key-${formatKey}`} className="text-sm font-medium text-gray-700">Format Key (Identifier)</Label>
+                      <Input
+                        key={`input-${formatKey}`}
+                        id={`key-${formatKey}`}
+                        defaultValue={formatKey}
+                        onBlur={(e) => {
+                          const newKey = e.target.value.toLowerCase().trim().replace(/\s+/g, '_');
+                          if (newKey !== formatKey && newKey !== '') {
+                            if (formData[newKey] && newKey !== formatKey) {
+                              alert(`Format key "${newKey}" already exists. Please use a different key.`);
+                              return;
+                            }
+                            // Rename the key by creating new object with new key
+                            const newData = { ...formData };
+                            delete newData[formatKey];
+                            newData[newKey] = formatData;
+                            setFormData(newData);
+                          }
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.currentTarget.blur();
+                          }
+                        }}
+                        placeholder="e.g., paperback"
+                        className="font-mono text-sm"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        This is the key used in orders. Use: paperback, hardcover, ebook, or audiobook. Press Enter or click away to save.
+                      </p>
+                    </div>
                     <Button
                       type="button"
                       variant="destructive"
@@ -298,15 +332,18 @@ export function SiteConfigForm({ config, onSave, onCancel }: SiteConfigFormProps
                     </Button>
                   </div>
                   <div>
-                    <Label>Format Name</Label>
+                    <Label>Format Name (Display Name)</Label>
                     <Input
                       value={formatData.name || ''}
                       onChange={(e) => setFormData({
                         ...formData,
                         [formatKey]: {...formatData, name: e.target.value}
                       })}
-                      placeholder="e.g., Hardcover"
+                      placeholder="e.g., Paperback"
                     />
+                    <p className="text-xs text-gray-500 mt-1">
+                      This is the name shown to customers
+                    </p>
                   </div>
                   <div>
                     <Label>Price ($)</Label>
@@ -329,7 +366,7 @@ export function SiteConfigForm({ config, onSave, onCancel }: SiteConfigFormProps
                         ...formData,
                         [formatKey]: {...formatData, description: e.target.value}
                       })}
-                      placeholder="e.g., Premium hardcover edition with dust jacket"
+                      placeholder="e.g., Premium paperback edition"
                       rows={2}
                     />
                   </div>
