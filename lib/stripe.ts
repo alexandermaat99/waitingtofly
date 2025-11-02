@@ -1,7 +1,7 @@
 import Stripe from 'stripe';
 
 export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2024-11-20.acacia', // Stable API version that supports Stripe Tax
+  apiVersion: '2025-09-30.clover', // Latest API version that supports Stripe Tax
 });
 
 export const formatAmountForStripe = (amount: number): number => {
