@@ -506,7 +506,7 @@ function PaymentForm({ clientSecret, setClientSecret }: PaymentFormInternalProps
         }
 
         // Confirm payment with PaymentElement (supports both cards and PayPal)
-        const { error: stripeError } = await stripe.confirmPayment({
+        const { error: stripeError, paymentIntent } = await stripe.confirmPayment({
           elements,
           clientSecret: clientSecret,
           confirmParams: {
@@ -517,6 +517,27 @@ function PaymentForm({ clientSecret, setClientSecret }: PaymentFormInternalProps
 
         if (stripeError) {
           throw new Error(stripeError.message);
+        }
+
+        // Extract payment intent ID from client secret (format: pi_xxx_secret_xxx)
+        // or use paymentIntent.id if available
+        const paymentIntentId = paymentIntent?.id || (clientSecret.split('_secret_')[0]);
+        
+        // Update order status immediately after successful payment (fallback if webhook hasn't fired yet)
+        if (paymentIntentId) {
+          try {
+            await fetch('/api/update-order-status', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                paymentIntentId: paymentIntentId,
+                status: 'completed'
+              })
+            });
+          } catch (updateError) {
+            // Non-blocking: webhook will handle it if this fails
+            console.log('Could not update order status immediately, webhook will handle it:', updateError);
+          }
         }
 
         // Success - redirect to success page
