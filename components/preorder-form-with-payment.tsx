@@ -502,7 +502,9 @@ function PaymentForm({ clientSecret, setClientSecret }: PaymentFormInternalProps
         // Validate the form first (REQUIRED by Stripe)
         const { error: submitError } = await elements.submit();
         if (submitError) {
-          throw new Error(submitError.message);
+          setError(submitError.message || 'Please check your payment information.');
+          setIsProcessing(false);
+          return;
         }
 
         // Confirm payment with PaymentElement (supports both cards and PayPal)
@@ -516,7 +518,10 @@ function PaymentForm({ clientSecret, setClientSecret }: PaymentFormInternalProps
         });
 
         if (stripeError) {
-          throw new Error(stripeError.message);
+          // Set error state directly instead of throwing to avoid console errors
+          setError(stripeError.message || 'Payment failed. Please try again.');
+          setIsProcessing(false);
+          return;
         }
 
         // Extract payment intent ID from client secret (format: pi_xxx_secret_xxx)
@@ -644,9 +649,15 @@ function PaymentForm({ clientSecret, setClientSecret }: PaymentFormInternalProps
       setIsProcessing(false);
       // Don't immediately confirm payment - wait for user to fill payment info and click "Complete Order"
     } catch (err) {
-      console.error('Payment error:', err);
-      setError(err instanceof Error ? err.message : 'Payment failed');
+      // Display error to user (don't log to console for user-facing errors)
+      const errorMessage = err instanceof Error ? err.message : 'Payment failed';
+      setError(errorMessage);
       setIsProcessing(false);
+      
+      // Only log unexpected errors for debugging
+      if (!errorMessage.includes('declined') && !errorMessage.includes('card')) {
+        console.error('Unexpected payment error:', err);
+      }
     }
   };
 
@@ -1075,18 +1086,18 @@ function PaymentForm({ clientSecret, setClientSecret }: PaymentFormInternalProps
                         <PaymentElement
                           options={{
                             layout: 'tabs',
-                            paymentMethodOrder: ['card', 'paypal', 'klarna', 'cashapp', 'amazon_pay'],
+                            paymentMethodOrder: ['apple_pay', 'google_pay', 'card', 'paypal', 'klarna', 'cashapp', 'amazon_pay'],
                           }}
                         />
                       ) : (
                         <div className="text-sm text-gray-500 py-8 text-center">
                           <p>Loading payment options...</p>
-                          <p className="text-xs mt-2">Secure payment options: Card, PayPal, Klarna, Cash App, or Amazon Pay</p>
+                          <p className="text-xs mt-2">Secure payment options: Apple Pay, Google Pay, Card, PayPal, Klarna, Cash App, or Amazon Pay</p>
                         </div>
                       )}
                     </div>
                     <p className="text-xs text-gray-500 mt-2">
-                      Secure payment options: Card, PayPal, Klarna, Cash App, or Amazon Pay
+                      Secure payment options: Apple Pay, Google Pay, Card, PayPal, Klarna, Cash App, or Amazon Pay
                     </p>
                   </div>
                   <button
