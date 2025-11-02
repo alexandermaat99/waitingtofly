@@ -231,7 +231,9 @@ export async function POST(request: NextRequest) {
           expand: ['automatic_tax.calculation'],
         });
         
-        const automaticTax = retrievedPaymentIntent.automatic_tax;
+        // Type assertion needed because automatic_tax may not be in type definition yet
+        const retrievedPaymentIntentWithTax = retrievedPaymentIntent as any;
+        const automaticTax = retrievedPaymentIntentWithTax.automatic_tax;
         
         if (automaticTax && automaticTax.status === 'complete' && automaticTax.amount !== null && automaticTax.amount !== undefined) {
           // ✅ Stripe Tax successfully calculated tax!
