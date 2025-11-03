@@ -146,8 +146,13 @@ export async function POST(request: NextRequest) {
     
     try {
       // Validate required address fields for tax calculation
+      // State is REQUIRED for accurate tax calculation in the US
       if (!shippingAddressLine1 || !shippingCity || !shippingPostalCode || !shippingCountry) {
         throw new Error('Missing required address fields for tax calculation');
+      }
+      
+      if (!shippingState || !shippingState.trim()) {
+        console.warn('⚠️ WARNING: State is missing - tax calculation may be inaccurate');
       }
       
       // Create line items for tax calculation
@@ -170,6 +175,7 @@ export async function POST(request: NextRequest) {
       }
       
       // Prepare address for tax calculation (Stripe requires specific format)
+      // State is critical for US tax calculations
       const taxAddress: any = {
         line1: shippingAddressLine1.trim(),
         city: shippingCity.trim(),
@@ -181,12 +187,24 @@ export async function POST(request: NextRequest) {
       if (shippingAddressLine2 && shippingAddressLine2.trim()) {
         taxAddress.line2 = shippingAddressLine2.trim();
       }
+      
+      // State is required for accurate US tax calculation
       if (shippingState && shippingState.trim()) {
         taxAddress.state = shippingState.trim().toUpperCase();
+      } else {
+        // Log warning but continue - Stripe might be able to determine state from ZIP
+        console.warn('⚠️ State not provided - tax calculation may be less accurate');
       }
       
-      console.log('📍 Address being sent to Stripe Tax:', taxAddress);
-      console.log('📦 Line items for tax calculation:', lineItems);
+      console.log('📍 Address being sent to Stripe Tax:', JSON.stringify(taxAddress, null, 2));
+      console.log('📦 Line items for tax calculation:', JSON.stringify(lineItems, null, 2));
+      console.log('💰 Amounts:', {
+        subtotal: subtotalAmount,
+        shipping: shippingAmount,
+        amountBeforeTax,
+        productTaxCode,
+        isDigital,
+      });
       
       // Create tax calculation using Stripe Tax API
       taxCalculation = await stripe.tax.calculations.create({
@@ -245,19 +263,34 @@ export async function POST(request: NextRequest) {
       // Extract tax amount (in cents) and convert to dollars
       finalTaxAmount = formatAmountFromStripe(taxCalculation.tax_amount_exclusive || 0);
       // Use amount_total from calculation (includes tax)
-      finalTotal = formatAmountFromStripe(taxCalculation.amount_total || formatAmountForStripe(amountBeforeTax));
+      // If amount_total is missing, fallback to calculated total
+      const calculatedAmountTotal = taxCalculation.amount_total || formatAmountForStripe(amountBeforeTax + finalTaxAmount);
+      finalTotal = formatAmountFromStripe(calculatedAmountTotal);
       
-      console.log('💰 Final amounts:', {
+      console.log('💰 Final amounts from Stripe Tax:', {
         subtotal: subtotalAmount,
         shipping: shippingAmount,
         tax: finalTaxAmount,
         total: finalTotal,
+        calculation_total: formatAmountFromStripe(taxCalculation.amount_total || 0),
       });
     } catch (taxError: any) {
       console.error('❌ Stripe Tax calculation failed:', {
         error: taxError?.message,
         code: taxError?.code,
         type: taxError?.type,
+        statusCode: taxError?.statusCode,
+        raw: taxError?.raw,
+      });
+      console.error('   Full error object:', taxError);
+      
+      // Log the address that failed
+      console.error('   Address used:', {
+        line1: shippingAddressLine1,
+        city: shippingCity,
+        state: shippingState,
+        postal_code: shippingPostalCode,
+        country: shippingCountry,
       });
       
       // Fallback to manual tax calculation if Stripe Tax fails
@@ -265,6 +298,13 @@ export async function POST(request: NextRequest) {
       const { tax: calculatedTax } = calculateTax(amountBeforeTax, shippingCountry, shippingState, isDigital);
       finalTaxAmount = calculatedTax;
       finalTotal = amountBeforeTax + finalTaxAmount;
+      
+      console.log('💰 Final amounts from manual calculation:', {
+        subtotal: subtotalAmount,
+        shipping: shippingAmount,
+        tax: finalTaxAmount,
+        total: finalTotal,
+      });
     }
     
     // Step 2: Create payment intent with tax calculation linked (if available)

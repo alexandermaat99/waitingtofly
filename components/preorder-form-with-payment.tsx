@@ -1303,26 +1303,22 @@ function PaymentForm({ clientSecret, setClientSecret }: PaymentFormInternalProps
 function PaymentFormWrapper({ onSuccess }: PreorderFormWithPaymentProps) {
   const [clientSecret, setClientSecret] = useState<string | null>(null);
 
-  // Always wrap PaymentForm in Elements - useStripe/useElements require Elements context
-  // When clientSecret doesn't exist, use mode: 'payment' with placeholder amount
-  // When clientSecret exists, use clientSecret
-  // Don't remount Elements - Stripe handles option updates dynamically
-  const elementsOptions = useMemo(() => {
-    if (clientSecret) {
-      return { clientSecret, appearance: { theme: 'stripe' as const } };
-    }
-    return { 
-      mode: 'payment' as const,
-      amount: 100, // Placeholder - actual amount set when payment intent is created
-      currency: 'usd',
-      appearance: { theme: 'stripe' as const }
-    };
-  }, [clientSecret]);
-  
+  // Key-based remounting: Elements must be remounted when clientSecret changes
+  // because clientSecret is not a mutable property in Stripe Elements
   return (
     <Elements 
+      key={clientSecret || 'no-secret'} // Force remount when clientSecret changes
       stripe={stripePromise} 
-      options={elementsOptions}
+      options={
+        clientSecret 
+          ? { clientSecret, appearance: { theme: 'stripe' as const } }
+          : { 
+              mode: 'payment' as const,
+              amount: 100, // Placeholder - will be replaced when payment intent is created
+              currency: 'usd',
+              appearance: { theme: 'stripe' as const }
+            }
+      }
     >
       <PaymentForm clientSecret={clientSecret} setClientSecret={setClientSecret} />
     </Elements>
