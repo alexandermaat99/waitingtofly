@@ -1167,7 +1167,6 @@ function PaymentForm({ clientSecret, setClientSecret }: PaymentFormInternalProps
                             layout: 'tabs',
                             paymentMethodOrder: ['card', 'paypal', 'klarna', 'cashapp', 'amazon_pay'],
                             wallets: {
-                              applePay: 'auto',
                               googlePay: 'auto',
                             },
                           }}
