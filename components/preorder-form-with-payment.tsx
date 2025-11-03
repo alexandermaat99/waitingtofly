@@ -1181,6 +1181,11 @@ function PaymentForm({ clientSecret, setClientSecret }: PaymentFormInternalProps
                     <p className="text-xs text-gray-500 mt-2">
                       Secure payment options: Apple Pay, Google Pay, Card, PayPal, Klarna, Cash App, or Amazon Pay
                     </p>
+                    <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                      <p className="text-xs text-blue-800">
+                        <strong>Apple Pay & Google Pay:</strong> After submission, you will be redirected to securely complete your payment.
+                      </p>
+                    </div>
                   </div>
                   <button
                     type="button"
