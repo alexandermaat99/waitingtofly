@@ -30,7 +30,8 @@ export async function POST(request: NextRequest) {
         const supabase = await createClient();
         
         // Extract tax information from Stripe Tax
-        const totalDetails = fullSession.total_details;
+        // Note: total_details structure may vary, so we use type assertions
+        const totalDetails = fullSession.total_details as any;
         const taxAmount = totalDetails?.amount_tax ? totalDetails.amount_tax / 100 : 0;
         const subtotalAmount = totalDetails?.amount_subtotal ? totalDetails.amount_subtotal / 100 : 0;
         const totalAmount = fullSession.amount_total ? fullSession.amount_total / 100 : 0;
