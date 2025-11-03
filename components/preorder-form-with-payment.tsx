@@ -1203,7 +1203,6 @@ function PaymentForm({ clientSecret, setClientSecret }: PaymentFormInternalProps
 
           <div className="mt-4 text-xs text-gray-500 text-center">
             <p>🔒 Secure payment powered by Stripe</p>
-            <p>Test with: 4242 4242 4242 4242</p>
           </div>
         </Card>
 
