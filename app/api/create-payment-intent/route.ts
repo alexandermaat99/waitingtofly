@@ -251,7 +251,6 @@ export async function POST(request: NextRequest) {
         amount_total: taxCalculation.amount_total,
         tax_amount_exclusive: taxCalculation.tax_amount_exclusive,
         tax_amount_inclusive: taxCalculation.tax_amount_inclusive,
-        status: taxCalculation.status,
         livemode: taxCalculation.livemode,
       });
       
@@ -287,11 +286,6 @@ export async function POST(request: NextRequest) {
         });
       } else {
         console.warn('⚠️ No tax breakdown returned from Stripe Tax');
-      }
-      
-      // Also check the calculation-level status
-      if (taxCalculation.status) {
-        console.log('📊 Calculation Status:', taxCalculation.status);
       }
       
       // Extract tax amount (in cents) and convert to dollars
