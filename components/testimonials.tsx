@@ -10,6 +10,26 @@ export function Testimonials() {
   const [bookInfo, setBookInfo] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Helper function to convert object with numeric keys to array
+  const objectToArray = (obj: any): any[] => {
+    if (Array.isArray(obj)) {
+      return obj;
+    }
+    if (obj && typeof obj === 'object') {
+      // Check if it's an object with numeric string keys (like {"0": {...}, "1": {...}})
+      const keys = Object.keys(obj);
+      const allNumericKeys = keys.every(key => /^\d+$/.test(key));
+      if (allNumericKeys && keys.length > 0) {
+        // Convert to array by sorting keys numerically and mapping
+        return keys
+          .map(Number)
+          .sort((a, b) => a - b)
+          .map(key => obj[String(key)]);
+      }
+    }
+    return [];
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -17,10 +37,19 @@ export function Testimonials() {
           getTestimonials(),
           getBookInfo()
         ]);
-        setTestimonials(testimonialsData || []);
+        // Ensure testimonialsData is always an array, converting from object if needed
+        let safeTestimonials: any[] = [];
+        if (Array.isArray(testimonialsData)) {
+          safeTestimonials = testimonialsData;
+        } else {
+          // Try to convert object to array
+          safeTestimonials = objectToArray(testimonialsData);
+        }
+        setTestimonials(safeTestimonials);
         setBookInfo(bookData);
       } catch (error) {
         console.error('Error fetching testimonials data:', error);
+        setTestimonials([]); // Set empty array on error
       } finally {
         setIsLoading(false);
       }
@@ -62,7 +91,7 @@ export function Testimonials() {
       </div>
 
       <div className="grid md:grid-cols-3 gap-8">
-        {testimonials.map((testimonial, index) => (
+        {Array.isArray(testimonials) && testimonials.map((testimonial, index) => (
           <Card key={index} className="p-6 bg-white border border-gray-200 hover:shadow-lg transition-shadow">
             <div className="space-y-4">
               <div className="text-yellow-400 text-2xl">

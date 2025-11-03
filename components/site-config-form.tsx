@@ -29,13 +29,53 @@ export function SiteConfigForm({ config, onSave, onCancel }: SiteConfigFormProps
   const [formData, setFormData] = useState<any>({});
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [formatsInput, setFormatsInput] = useState<string>('');
+
+  // Helper function to convert object with numeric keys to array
+  const objectToArray = (obj: any): any[] => {
+    if (Array.isArray(obj)) {
+      return obj;
+    }
+    if (obj && typeof obj === 'object') {
+      // Check if it's an object with numeric string keys (like {"0": {...}, "1": {...}})
+      const keys = Object.keys(obj);
+      const allNumericKeys = keys.every(key => /^\d+$/.test(key));
+      if (allNumericKeys && keys.length > 0) {
+        // Convert to array by sorting keys numerically and mapping
+        return keys
+          .map(Number)
+          .sort((a, b) => a - b)
+          .map(key => obj[String(key)]);
+      }
+    }
+    return [];
+  };
 
   useEffect(() => {
     // Handle shipping_price which is a number, not an object
     if (config.config_key === 'shipping_price') {
       setFormData(config.config_value || 0);
+    } else if (config.config_key === 'testimonials' || config.config_key === 'preorder_benefits') {
+      // Ensure these are always arrays, converting from object if needed
+      const value = config.config_value;
+      if (Array.isArray(value)) {
+        setFormData(value);
+      } else {
+        // Try to convert object to array
+        const converted = objectToArray(value);
+        setFormData(converted.length > 0 ? converted : []);
+      }
     } else {
       setFormData(config.config_value || {});
+      // Initialize formats input string
+      if (config.config_key === 'book_info') {
+        const formats = (config.config_value || {}).formats;
+        if (Array.isArray(formats)) {
+          setFormatsInput(formats.join(', '));
+        } else {
+          setFormatsInput('');
+        }
+      }
     }
   }, [config]);
 
@@ -43,7 +83,24 @@ export function SiteConfigForm({ config, onSave, onCancel }: SiteConfigFormProps
     try {
       setError(null);
       setSaving(true);
-      await onSave(config.config_key, formData, config.description);
+      
+      let dataToSave: any;
+      
+      // Handle array types (testimonials, preorder_benefits)
+      if (config.config_key === 'testimonials' || config.config_key === 'preorder_benefits') {
+        dataToSave = Array.isArray(formData) ? formData : [];
+      } else if (config.config_key === 'book_info') {
+        // Process formats string to array before saving
+        dataToSave = { ...formData };
+        if (formatsInput) {
+          const formatsArray = formatsInput.split(',').map((f: string) => f.trim()).filter((f: string) => f !== '');
+          dataToSave.formats = formatsArray;
+        }
+      } else {
+        dataToSave = formData;
+      }
+      
+      await onSave(config.config_key, dataToSave, config.description);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save configuration');
     } finally {
@@ -111,6 +168,77 @@ export function SiteConfigForm({ config, onSave, onCancel }: SiteConfigFormProps
                 placeholder="e.g., Preorder now and get a signed copy!"
               />
             </div>
+            <div>
+              <Label htmlFor="series">Series</Label>
+              <Input
+                id="series"
+                value={formData.series || ''}
+                onChange={(e) => setFormData({...formData, series: e.target.value})}
+                placeholder="e.g., Memoir Series"
+              />
+            </div>
+            <div className="border-t pt-4">
+              <h3 className="text-lg font-medium mb-3">Previous Book Information</h3>
+              <div className="space-y-3">
+                <div>
+                  <Label htmlFor="previousBook">Previous Book Title</Label>
+                  <Input
+                    id="previousBook"
+                    value={formData.previousBook || ''}
+                    onChange={(e) => setFormData({...formData, previousBook: e.target.value})}
+                    placeholder="e.g., Before I Became a Refugee Girl: Life in Laos During the Vietnam War Era"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="previousBookUrl">Previous Book URL</Label>
+                  <Input
+                    id="previousBookUrl"
+                    value={formData.previousBookUrl || ''}
+                    onChange={(e) => setFormData({...formData, previousBookUrl: e.target.value})}
+                    placeholder="https://a.co/d/623YZo9"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Full URL to the previous book (e.g., Amazon link)
+                  </p>
+                </div>
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  <p className="text-xs text-blue-800">
+                    <strong>Note:</strong> To edit the previous book year (e.g., 2020), go to <strong>Author Info</strong> configuration and edit the "Previous Works" section.
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="border-t pt-4">
+              <h3 className="text-lg font-medium mb-3">Additional Information</h3>
+              <div className="space-y-3">
+                <div>
+                  <Label htmlFor="coverImage">Cover Image Path</Label>
+                  <Input
+                    id="coverImage"
+                    value={formData.coverImage || ''}
+                    onChange={(e) => setFormData({...formData, coverImage: e.target.value})}
+                    placeholder="e.g., /images/bookImage.png"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="formats">Book Formats (comma-separated)</Label>
+                  <Input
+                    id="formats"
+                    value={formatsInput}
+                    onChange={(e) => setFormatsInput(e.target.value)}
+                    onBlur={() => {
+                      // Convert to array when user leaves the field
+                      const formatsArray = formatsInput.split(',').map((f: string) => f.trim()).filter((f: string) => f !== '');
+                      setFormData({...formData, formats: formatsArray});
+                    }}
+                    placeholder="e.g., Hardcover, Paperback, eBook"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Type formats separated by commas. You can include commas in format names.
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
         );
 
@@ -155,6 +283,84 @@ export function SiteConfigForm({ config, onSave, onCancel }: SiteConfigFormProps
                 placeholder="Enter author quote"
                 rows={2}
               />
+            </div>
+            <div className="border-t pt-4">
+              <h3 className="text-lg font-medium mb-3">Previous Works</h3>
+              {Array.isArray(formData.previousWorks) && formData.previousWorks.map((work: any, index: number) => (
+                <Card key={index} className="p-4 mb-3">
+                  <div className="space-y-3">
+                    <div>
+                      <Label>Title</Label>
+                      <Input
+                        value={work.title || ''}
+                        onChange={(e) => {
+                          const currentWorks = Array.isArray(formData.previousWorks) ? formData.previousWorks : [];
+                          const newWorks = [...currentWorks];
+                          newWorks[index] = {...work, title: e.target.value};
+                          setFormData({...formData, previousWorks: newWorks});
+                        }}
+                        placeholder="Book title"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label>Year</Label>
+                        <Input
+                          value={work.year || ''}
+                          onChange={(e) => {
+                            const currentWorks = Array.isArray(formData.previousWorks) ? formData.previousWorks : [];
+                            const newWorks = [...currentWorks];
+                            newWorks[index] = {...work, year: e.target.value};
+                            setFormData({...formData, previousWorks: newWorks});
+                          }}
+                          placeholder="e.g., 2023"
+                        />
+                      </div>
+                      <div>
+                        <Label>Achievement</Label>
+                        <Input
+                          value={work.achievement || ''}
+                          onChange={(e) => {
+                            const currentWorks = Array.isArray(formData.previousWorks) ? formData.previousWorks : [];
+                            const newWorks = [...currentWorks];
+                            newWorks[index] = {...work, achievement: e.target.value};
+                            setFormData({...formData, previousWorks: newWorks});
+                          }}
+                          placeholder="e.g., First Book in Memoir Series"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <Label>URL</Label>
+                      <Input
+                        value={work.url || ''}
+                        onChange={(e) => {
+                          const currentWorks = Array.isArray(formData.previousWorks) ? formData.previousWorks : [];
+                          const newWorks = [...currentWorks];
+                          newWorks[index] = {...work, url: e.target.value};
+                          setFormData({...formData, previousWorks: newWorks});
+                        }}
+                        placeholder="https://a.co/d/623YZo9"
+                      />
+                    </div>
+                  </div>
+                </Card>
+              ))}
+              {(!Array.isArray(formData.previousWorks) || formData.previousWorks.length === 0) && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    const currentWorks = Array.isArray(formData.previousWorks) ? formData.previousWorks : [];
+                    setFormData({
+                      ...formData,
+                      previousWorks: [...currentWorks, { title: '', year: '', achievement: '', url: '' }]
+                    });
+                  }}
+                >
+                  Add Previous Work
+                </Button>
+              )}
             </div>
           </div>
         );

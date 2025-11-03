@@ -116,9 +116,9 @@ export function BookHero() {
                 Preorder Now
               </Button>
             </Link>
-            <Link href="#forward" scroll={true}>
+            <Link href="#forword" scroll={true}>
               <Button size="lg" variant="outline" className="border-green-600 text-green-600 hover:bg-green-50 px-8 py-3 text-lg">
-                Read Forward
+                Read Forword
               </Button>
             </Link>
           </div>

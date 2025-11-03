@@ -105,7 +105,7 @@ INSERT INTO public.site_config (config_key, config_value, description, category)
   "previousWorks": [
     {
       "title": "Before I Became a Refugee Girl: Life in Laos During the Vietnam War Era",
-      "year": "2023",
+      "year": "2020",
       "achievement": "First Book in Memoir Series",
       "url": "https://a.co/d/623YZo9"
     }

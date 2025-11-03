@@ -1,15 +1,15 @@
 import { Card } from "@/components/ui/card";
 
-export function Forward() {
+export function Forword() {
   return (
-    <section id="forward" className="w-full max-w-6xl mx-auto px-4 py-16">
+    <section id="forword" className="w-full max-w-6xl mx-auto px-4 py-16">
       <div className="max-w-4xl mx-auto">
         <Card className="p-8">
           <div className="text-center mb-8">
             <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-2">
-              Forward
+              Forword
             </h2>
-            <p className="text-lg text-gray-600 mb-4">by Raymon Aaron</p>
+            <p className="text-lg text-gray-600 mb-4">by Raymond Aaron</p>
             <div className="w-24 h-1 bg-green-600 mx-auto"></div>
           </div>
 
@@ -39,7 +39,7 @@ export function Forward() {
             </p>
 
             <div className="text-right border-t border-gray-200 pt-6">
-              <p className="text-xl font-bold text-gray-900 mb-1">— Raymon Aaron</p>
+              <p className="text-xl font-bold text-gray-900 mb-1">— Raymond Aaron</p>
               <p className="text-lg text-green-600 font-semibold">New York Times Bestselling Author</p>
             </div>
           </div>
@@ -48,3 +48,4 @@ export function Forward() {
     </section>
   );
 }
+

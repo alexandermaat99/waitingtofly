@@ -118,18 +118,22 @@ export function AboutAuthor() {
             <div>
               <h4 className="font-semibold text-gray-900">Previous Works:</h4>
               <ul className="text-gray-700 space-y-1 mt-2">
-                {authorInfo.previousWorks.map((work: any, index: number) => (
-                  <li key={index}>
-                    <Link 
-                      href={work.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="hover:text-green-600 transition-colors duration-200"
-                    >
-                      • &ldquo;{work.title}&rdquo; ({work.year}) - {work.achievement}
-                    </Link>
-                  </li>
-                ))}
+                {authorInfo.previousWorks.map((work: any, index: number) => {
+                  // Hardcode year to 2020 for "Before I Became a Refugee Girl"
+                  const displayYear = work.title?.includes("Before I Became a Refugee Girl") ? "2020" : (work.year || "");
+                  return (
+                    <li key={index}>
+                      <Link 
+                        href={work.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="hover:text-green-600 transition-colors duration-200"
+                      >
+                        &ldquo;{work.title}&rdquo; ({displayYear}) - {work.achievement}
+                      </Link>
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           </div>

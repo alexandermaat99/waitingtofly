@@ -3,7 +3,7 @@
 import { BookHero } from "@/components/book-hero";
 import { PreorderForm } from "@/components/preorder-form";
 import { AboutAuthor } from "@/components/about-author";
-import { Forward } from "@/components/forward";
+import { Forword } from "@/components/forword";
 import { Testimonials } from "@/components/testimonials";
 import { getSiteConfigData } from "@/lib/site-config-client";
 import Link from "next/link";
@@ -75,7 +75,7 @@ export default function Home() {
         
         <AboutAuthor />
         
-        <Forward />
+        <Forword />
 
         {/* Footer */}
         <footer className="w-full bg-green-900 text-white py-16">
