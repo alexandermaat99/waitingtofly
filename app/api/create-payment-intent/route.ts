@@ -434,7 +434,20 @@ export async function POST(request: NextRequest) {
     }
     
     // Create the PaymentIntent
+    console.log('💰 Creating PaymentIntent with amount:', {
+      finalTotal: finalTotal,
+      amountInCents: formatAmountForStripe(finalTotal),
+      subtotal: subtotalAmount,
+      shipping: shippingAmount,
+      tax: finalTaxAmount,
+    });
     const paymentIntent = await stripe.paymentIntents.create(paymentIntentData);
+    console.log('✅ PaymentIntent created:', {
+      id: paymentIntent.id,
+      amount: paymentIntent.amount,
+      amountFormatted: `$${(paymentIntent.amount / 100).toFixed(2)}`,
+      currency: paymentIntent.currency,
+    });
 
     // Save order to database with shipping information
     // FINAL SAFETY CHECK: Ensure format is valid before saving

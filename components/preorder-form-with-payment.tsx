@@ -1160,7 +1160,7 @@ function PaymentForm({ clientSecret, setClientSecret }: PaymentFormInternalProps
                   <div>
                     <Label className="text-sm font-medium text-gray-700 mb-2 block">Payment Details</Label>
                     <div className="p-3 border border-gray-300 rounded-md bg-white min-h-[200px]">
-                      {stripe && elements ? (
+                      {stripe && elements && clientSecret ? (
                         <PaymentElement
                           options={{
                             layout: 'tabs',
