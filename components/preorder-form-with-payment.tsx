@@ -113,22 +113,8 @@ function PaymentForm({ clientSecret, setClientSecret }: PaymentFormInternalProps
     shippingPhone,
   ]);
 
-  // Clear localStorage on successful payment
-  useEffect(() => {
-    if (clientSecret) {
-      // Payment successful, keep state until redirect
-      return () => {
-        // Clear on unmount after successful payment
-        if (typeof window !== 'undefined') {
-          Object.keys(localStorage).forEach(key => {
-            if (key.startsWith('checkout_')) {
-              localStorage.removeItem(key);
-            }
-          });
-        }
-      };
-    }
-  }, [clientSecret]);
+  // Don't clear localStorage when clientSecret changes - only clear after successful payment redirect
+  // The form state should persist through the payment intent creation process
 
   const stripe = useStripe();
   const elements = useElements();
@@ -1303,18 +1289,19 @@ function PaymentForm({ clientSecret, setClientSecret }: PaymentFormInternalProps
 function PaymentFormWrapper({ onSuccess }: PreorderFormWithPaymentProps) {
   const [clientSecret, setClientSecret] = useState<string | null>(null);
 
-  // Key-based remounting: Elements must be remounted when clientSecret changes
-  // because clientSecret is not a mutable property in Stripe Elements
+  // Keep Elements mounted with a stable key - don't remount when clientSecret changes
+  // This prevents PaymentForm from losing state
+  // Stripe will handle the clientSecret change via options update
   return (
     <Elements 
-      key={clientSecret || 'no-secret'} // Force remount when clientSecret changes
+      key="payment-elements" // Stable key - never changes
       stripe={stripePromise} 
       options={
         clientSecret 
           ? { clientSecret, appearance: { theme: 'stripe' as const } }
           : { 
               mode: 'payment' as const,
-              amount: 100, // Placeholder - will be replaced when payment intent is created
+              amount: 100, // Placeholder
               currency: 'usd',
               appearance: { theme: 'stripe' as const }
             }
