@@ -146,13 +146,20 @@ export async function POST(request: NextRequest) {
     
     try {
       // Validate required address fields for tax calculation
-      // State is REQUIRED for accurate tax calculation in the US
-      if (!shippingAddressLine1 || !shippingCity || !shippingPostalCode || !shippingCountry) {
-        throw new Error('Missing required address fields for tax calculation');
+      // For US addresses, state is REQUIRED for accurate tax calculation
+      const requiredFields: string[] = [];
+      if (!shippingAddressLine1 || !shippingAddressLine1.trim()) requiredFields.push('address line1');
+      if (!shippingCity || !shippingCity.trim()) requiredFields.push('city');
+      if (!shippingPostalCode || !shippingPostalCode.trim()) requiredFields.push('postal code');
+      if (!shippingCountry || !shippingCountry.trim()) requiredFields.push('country');
+      
+      // State is REQUIRED for US tax calculations
+      if (shippingCountry?.trim().toUpperCase() === 'US' && (!shippingState || !shippingState.trim())) {
+        requiredFields.push('state (required for US addresses)');
       }
       
-      if (!shippingState || !shippingState.trim()) {
-        console.warn('⚠️ WARNING: State is missing - tax calculation may be inaccurate');
+      if (requiredFields.length > 0) {
+        throw new Error(`Missing required address fields for tax calculation: ${requiredFields.join(', ')}`);
       }
       
       // Create line items for tax calculation
@@ -175,7 +182,7 @@ export async function POST(request: NextRequest) {
       }
       
       // Prepare address for tax calculation (Stripe requires specific format)
-      // State is critical for US tax calculations
+      // All fields are validated above - state is required for US addresses
       const taxAddress: any = {
         line1: shippingAddressLine1.trim(),
         city: shippingCity.trim(),
@@ -188,16 +195,39 @@ export async function POST(request: NextRequest) {
         taxAddress.line2 = shippingAddressLine2.trim();
       }
       
-      // State is required for accurate US tax calculation
+      // State is required for US tax calculations - already validated above
+      // Always include if we have it (required for US, optional for others)
       if (shippingState && shippingState.trim()) {
         taxAddress.state = shippingState.trim().toUpperCase();
-      } else {
-        // Log warning but continue - Stripe might be able to determine state from ZIP
-        console.warn('⚠️ State not provided - tax calculation may be less accurate');
       }
+      
+      // Validate address before sending to Stripe
+      console.log('📍 Address validation check:', {
+        has_line1: !!taxAddress.line1,
+        has_city: !!taxAddress.city,
+        has_postal_code: !!taxAddress.postal_code,
+        has_country: !!taxAddress.country,
+        has_state: !!taxAddress.state,
+        country: taxAddress.country,
+        state: taxAddress.state,
+      });
       
       console.log('📍 Address being sent to Stripe Tax:', JSON.stringify(taxAddress, null, 2));
       console.log('📦 Line items for tax calculation:', JSON.stringify(lineItems, null, 2));
+      
+      // Final validation - ensure all required fields are present
+      const missingRequiredFields: string[] = [];
+      if (!taxAddress.line1) missingRequiredFields.push('line1');
+      if (!taxAddress.city) missingRequiredFields.push('city');
+      if (!taxAddress.postal_code) missingRequiredFields.push('postal_code');
+      if (!taxAddress.country) missingRequiredFields.push('country');
+      if (taxAddress.country === 'US' && !taxAddress.state) {
+        missingRequiredFields.push('state (required for US addresses)');
+      }
+      
+      if (missingRequiredFields.length > 0) {
+        throw new Error(`Cannot create tax calculation - missing required address fields: ${missingRequiredFields.join(', ')}`);
+      }
       console.log('💰 Amounts:', {
         subtotal: subtotalAmount,
         shipping: shippingAmount,
@@ -221,8 +251,14 @@ export async function POST(request: NextRequest) {
         amount_total: taxCalculation.amount_total,
         tax_amount_exclusive: taxCalculation.tax_amount_exclusive,
         tax_amount_inclusive: taxCalculation.tax_amount_inclusive,
-        tax_breakdown: taxCalculation.tax_breakdown,
+        status: taxCalculation.status,
+        livemode: taxCalculation.livemode,
       });
+      
+      // Log full response for debugging (first 2 line items of breakdown)
+      if (taxCalculation.tax_breakdown && taxCalculation.tax_breakdown.length > 0) {
+        console.log('📋 Full Tax Breakdown (showing first item):', JSON.stringify(taxCalculation.tax_breakdown[0], null, 2));
+      }
       
       // Log detailed tax breakdown for debugging
       if (taxCalculation.tax_breakdown && taxCalculation.tax_breakdown.length > 0) {
@@ -234,19 +270,42 @@ export async function POST(request: NextRequest) {
             taxability_reason: breakdown.taxability_reason,
             tax_rate_details: breakdown.tax_rate_details,
           });
+          
+          // Log the SPECIFIC reason why tax is $0
+          if (breakdown.taxability_reason) {
+            console.log(`  📋 Taxability Reason for Item ${index + 1}:`, breakdown.taxability_reason);
+            if (breakdown.taxability_reason === 'not_collecting') {
+              console.error('  ❌ REASON: "not_collecting" - You are not registered to collect tax in this jurisdiction!');
+            } else if (breakdown.taxability_reason === 'exempt') {
+              console.warn('  ⚠️ REASON: "exempt" - Product is tax-exempt in this location');
+            } else if (breakdown.taxability_reason === 'invalid_location') {
+              console.error('  ❌ REASON: "invalid_location" - Address information is invalid or incomplete');
+            } else {
+              console.warn(`  ⚠️ REASON: "${breakdown.taxability_reason}" - Check Stripe Tax documentation`);
+            }
+          }
         });
       } else {
         console.warn('⚠️ No tax breakdown returned from Stripe Tax');
       }
       
+      // Also check the calculation-level status
+      if (taxCalculation.status) {
+        console.log('📊 Calculation Status:', taxCalculation.status);
+      }
+      
+      // Extract tax amount (in cents) and convert to dollars
+      const stripeTaxAmount = formatAmountFromStripe(taxCalculation.tax_amount_exclusive || 0);
+      
       // Check why tax is not being collected
-      if (taxCalculation.tax_amount_exclusive === 0) {
+      if (stripeTaxAmount === 0) {
         const isTestMode = process.env.STRIPE_SECRET_KEY?.startsWith('sk_test_');
-        console.warn('⚠️ WARNING: Stripe Tax returned $0 tax. Possible reasons:');
+        console.warn('⚠️ WARNING: Stripe Tax returned $0 tax. Using manual fallback calculation.');
+        console.warn('  Possible reasons Stripe Tax returned $0:');
         console.warn('  1. Tax registrations may not be set up in Stripe Dashboard');
         if (isTestMode) {
           console.warn('     → In TEST MODE: Go to https://dashboard.stripe.com/test/settings/tax');
-          console.warn('     → Add test tax registrations (e.g., California with test reg number)');
+          console.warn('     → Add test tax registrations (e.g., Utah/California with test reg number)');
           console.warn('     → Use any test registration number like "TEST-123456"');
         } else {
           console.warn('     → In LIVE MODE: Go to https://dashboard.stripe.com/settings/tax');
@@ -258,22 +317,34 @@ export async function POST(request: NextRequest) {
         console.warn('  5. You may not be registered to collect tax in this jurisdiction');
         console.warn('  Address used:', taxAddress);
         console.warn('  Mode:', isTestMode ? 'TEST' : 'LIVE');
+        
+        // FALLBACK: Use manual tax calculation when Stripe Tax returns $0
+        console.log('🔄 Falling back to manual tax calculation');
+        const { tax: calculatedTax } = calculateTax(amountBeforeTax, shippingCountry, shippingState, isDigital);
+        finalTaxAmount = calculatedTax;
+        finalTotal = amountBeforeTax + finalTaxAmount;
+        
+        console.log('💰 Final amounts from manual calculation (fallback):', {
+          subtotal: subtotalAmount,
+          shipping: shippingAmount,
+          tax: finalTaxAmount,
+          total: finalTotal,
+        });
+      } else {
+        // Stripe Tax calculated successfully - use its values
+        finalTaxAmount = stripeTaxAmount;
+        // Use amount_total from calculation (includes tax)
+        const calculatedAmountTotal = taxCalculation.amount_total || formatAmountForStripe(amountBeforeTax + finalTaxAmount);
+        finalTotal = formatAmountFromStripe(calculatedAmountTotal);
+        
+        console.log('✅ Final amounts from Stripe Tax:', {
+          subtotal: subtotalAmount,
+          shipping: shippingAmount,
+          tax: finalTaxAmount,
+          total: finalTotal,
+          calculation_total: formatAmountFromStripe(taxCalculation.amount_total || 0),
+        });
       }
-      
-      // Extract tax amount (in cents) and convert to dollars
-      finalTaxAmount = formatAmountFromStripe(taxCalculation.tax_amount_exclusive || 0);
-      // Use amount_total from calculation (includes tax)
-      // If amount_total is missing, fallback to calculated total
-      const calculatedAmountTotal = taxCalculation.amount_total || formatAmountForStripe(amountBeforeTax + finalTaxAmount);
-      finalTotal = formatAmountFromStripe(calculatedAmountTotal);
-      
-      console.log('💰 Final amounts from Stripe Tax:', {
-        subtotal: subtotalAmount,
-        shipping: shippingAmount,
-        tax: finalTaxAmount,
-        total: finalTotal,
-        calculation_total: formatAmountFromStripe(taxCalculation.amount_total || 0),
-      });
     } catch (taxError: any) {
       console.error('❌ Stripe Tax calculation failed:', {
         error: taxError?.message,
@@ -307,7 +378,9 @@ export async function POST(request: NextRequest) {
       });
     }
     
-    // Step 2: Create payment intent with tax calculation linked (if available)
+    // Step 2: Create payment intent with tax calculation linked (if available and tax > 0)
+    // Only link tax calculation if we actually got valid tax from Stripe Tax
+    // If we're using fallback manual calculation, don't link the $0 tax calculation
     const paymentIntentData: any = {
       amount: formatAmountForStripe(finalTotal),
       currency: 'usd',
@@ -315,8 +388,9 @@ export async function POST(request: NextRequest) {
         enabled: true,
         allow_redirects: 'always', // Required for PayPal and other redirect-based payment methods
       },
-      // Link tax calculation to PaymentIntent if available
-      ...(taxCalculation && {
+      // Link tax calculation to PaymentIntent ONLY if tax > 0 (valid Stripe Tax result)
+      // Don't link if we fell back to manual calculation
+      ...(taxCalculation && finalTaxAmount > 0 && formatAmountFromStripe(taxCalculation.tax_amount_exclusive || 0) > 0 && {
         hooks: {
           inputs: {
             tax: {
@@ -339,7 +413,9 @@ export async function POST(request: NextRequest) {
         phone: shippingPhone || undefined,
       },
       metadata: {
-        tax_calculation_id: taxCalculation?.id || '',
+        tax_calculation_id: (taxCalculation && finalTaxAmount > 0) ? taxCalculation.id : '',
+        using_stripe_tax: taxCalculation && finalTaxAmount > 0 && formatAmountFromStripe(taxCalculation.tax_amount_exclusive || 0) > 0,
+        using_manual_tax: finalTaxAmount > 0 && (!taxCalculation || formatAmountFromStripe(taxCalculation.tax_amount_exclusive || 0) === 0),
         email,
         name,
         bookFormat,
