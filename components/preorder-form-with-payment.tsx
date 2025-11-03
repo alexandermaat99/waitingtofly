@@ -1161,16 +1161,23 @@ function PaymentForm({ clientSecret, setClientSecret }: PaymentFormInternalProps
                     <Label className="text-sm font-medium text-gray-700 mb-2 block">Payment Details</Label>
                     <div className="p-3 border border-gray-300 rounded-md bg-white min-h-[200px]">
                       {stripe && elements ? (
-                        <PaymentElement
-                          options={{
-                            layout: 'tabs',
-                            paymentMethodOrder: ['card', 'paypal', 'klarna', 'cashapp', 'amazon_pay'],
-                            wallets: {
-                              applePay: 'auto',
-                              googlePay: 'auto',
-                            },
-                          }}
-                        />
+                        <>
+                          <PaymentElement
+                            options={{
+                              layout: 'tabs',
+                              paymentMethodOrder: ['card', 'paypal', 'klarna', 'cashapp', 'amazon_pay'],
+                              wallets: {
+                                applePay: 'auto',
+                                googlePay: 'auto',
+                              },
+                            }}
+                          />
+                          <div className="mt-3 pt-3 border-t border-gray-200">
+                            <p className="text-xs text-gray-600">
+                              <strong>Apple Pay & Google Pay:</strong> After submission, you will be redirected to securely complete next steps.
+                            </p>
+                          </div>
+                        </>
                       ) : (
                         <div className="text-sm text-gray-500 py-8 text-center">
                           <p>Loading payment options...</p>
@@ -1181,11 +1188,6 @@ function PaymentForm({ clientSecret, setClientSecret }: PaymentFormInternalProps
                     <p className="text-xs text-gray-500 mt-2">
                       Secure payment options: Apple Pay, Google Pay, Card, PayPal, Klarna, Cash App, or Amazon Pay
                     </p>
-                    <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-md">
-                      <p className="text-xs text-blue-800">
-                        <strong>Apple Pay & Google Pay:</strong> After submission, you will be redirected to securely complete your payment.
-                      </p>
-                    </div>
                   </div>
                   <button
                     type="button"
