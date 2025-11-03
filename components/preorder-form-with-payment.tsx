@@ -22,9 +22,10 @@ const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
 interface PaymentFormInternalProps {
   clientSecret: string | null;
   setClientSecret: (secret: string | null) => void;
+  setPaymentAmount: (amount: number | null) => void;
 }
 
-function PaymentForm({ clientSecret, setClientSecret }: PaymentFormInternalProps) {
+function PaymentForm({ clientSecret, setClientSecret, setPaymentAmount }: PaymentFormInternalProps) {
   const searchParams = useSearchParams();
   
   // Restore form state from localStorage if available
@@ -465,6 +466,12 @@ function PaymentForm({ clientSecret, setClientSecret }: PaymentFormInternalProps
         setStripeTax(data.tax);
         setDisplaySubtotal(data.subtotal);
         setActualTax(data.tax);
+      }
+      
+      // Set payment amount for wallets BEFORE setting clientSecret
+      // This ensures wallets have the correct amount when they initialize
+      if (data.amount !== undefined) {
+        setPaymentAmount(data.amount);
       }
       
       // Set clientSecret - this will cause PaymentElement to appear
@@ -1287,6 +1294,7 @@ function PaymentForm({ clientSecret, setClientSecret }: PaymentFormInternalProps
 
 function PaymentFormWrapper({ onSuccess }: PreorderFormWithPaymentProps) {
   const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [paymentAmount, setPaymentAmount] = useState<number | null>(null);
 
   // Keep Elements mounted with a stable key - don't remount when clientSecret changes
   // This prevents PaymentForm from losing state
@@ -1296,7 +1304,16 @@ function PaymentFormWrapper({ onSuccess }: PreorderFormWithPaymentProps) {
       key="payment-elements" // Stable key - never changes
       stripe={stripePromise} 
       options={
-        clientSecret 
+        clientSecret && paymentAmount
+          ? { 
+              clientSecret, 
+              // Explicitly pass amount for wallets (Apple Pay/Google Pay)
+              // This ensures wallets display the correct amount
+              amount: Math.round(paymentAmount * 100), // Convert to cents
+              currency: 'usd',
+              appearance: { theme: 'stripe' as const } 
+            }
+          : clientSecret
           ? { clientSecret, appearance: { theme: 'stripe' as const } }
           : { 
               mode: 'payment' as const,
@@ -1306,7 +1323,11 @@ function PaymentFormWrapper({ onSuccess }: PreorderFormWithPaymentProps) {
             }
       }
     >
-      <PaymentForm clientSecret={clientSecret} setClientSecret={setClientSecret} />
+      <PaymentForm 
+        clientSecret={clientSecret} 
+        setClientSecret={setClientSecret}
+        setPaymentAmount={setPaymentAmount}
+      />
     </Elements>
   );
 }
