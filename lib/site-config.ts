@@ -73,6 +73,11 @@ export async function getSiteConfigData() {
   return getSiteConfig('site_config');
 }
 
+export async function getShippingPrice(): Promise<number> {
+  const price = await getSiteConfig<number>('shipping_price');
+  return typeof price === 'number' ? price : 0;
+}
+
 
 // Clear cache (useful for admin updates)
 export function clearConfigCache() {

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { getBookInfo, getPreorderBenefits, getBookFormats } from "@/lib/site-config-client";
+import { getBookInfo, getPreorderBenefits, getBookFormats, getShippingPrice } from "@/lib/site-config-client";
 import { calculateTax } from "@/lib/tax-config";
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
@@ -60,6 +60,7 @@ function PaymentForm({ clientSecret, setClientSecret }: PaymentFormInternalProps
   const [bookInfo, setBookInfo] = useState<any>(null);
   const [bookFormats, setBookFormats] = useState<any>(null);
   const [preorderBenefits, setPreorderBenefits] = useState<any[]>([]);
+  const [shippingPrice, setShippingPrice] = useState<number>(0);
 
   // Shipping information state
   const [shippingFirstName, setShippingFirstName] = useState(() => getStoredState('shippingFirstName', ''));
@@ -72,12 +73,16 @@ function PaymentForm({ clientSecret, setClientSecret }: PaymentFormInternalProps
   const [shippingCountry, setShippingCountry] = useState(() => getStoredState('shippingCountry', 'US'));
   const [shippingPhone, setShippingPhone] = useState(() => getStoredState('shippingPhone', ''));
 
+  // Quantity and discount state
+  const [quantity, setQuantity] = useState(() => getStoredState('quantity', 1));
+
   // Save form state to localStorage whenever it changes
   useEffect(() => {
     const formData = {
       email,
       name,
       bookFormat,
+      quantity,
       shippingFirstName,
       shippingLastName,
       shippingAddressLine1,
@@ -96,6 +101,7 @@ function PaymentForm({ clientSecret, setClientSecret }: PaymentFormInternalProps
     email,
     name,
     bookFormat,
+    quantity,
     shippingFirstName,
     shippingLastName,
     shippingAddressLine1,
@@ -133,12 +139,13 @@ function PaymentForm({ clientSecret, setClientSecret }: PaymentFormInternalProps
     const formatKeys = Object.keys(formats);
     if (formatKeys.length === 0) return null;
     
-    // Prioritize physical formats (hardcover, paperback) over digital (ebook, audiobook)
+    // Prioritize physical formats (hardcover, paperback, bundle) over digital (ebook, audiobook)
     const physicalFormats = formatKeys.filter(key => !['ebook', 'audiobook'].includes(key));
     if (physicalFormats.length > 0) {
-      // Prefer hardcover over paperback if both exist
+      // Prefer hardcover over paperback if both exist, but bundle can also be selected
       if (physicalFormats.includes('hardcover')) return 'hardcover';
       if (physicalFormats.includes('paperback')) return 'paperback';
+      if (physicalFormats.includes('bundle')) return 'bundle';
       return physicalFormats[0];
     }
     
@@ -150,14 +157,16 @@ function PaymentForm({ clientSecret, setClientSecret }: PaymentFormInternalProps
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [bookData, formatsData, benefitsData] = await Promise.all([
+        const [bookData, formatsData, benefitsData, shipping] = await Promise.all([
           getBookInfo(),
           getBookFormats(),
-          getPreorderBenefits()
+          getPreorderBenefits(),
+          getShippingPrice()
         ]);
         setBookInfo(bookData);
         setBookFormats(formatsData);
         setPreorderBenefits(benefitsData || []);
+        setShippingPrice(shipping || 0);
 
         // Only set format if we're in order or shipping step and don't have a valid format
         // Don't reset format if we're already in payment step
@@ -235,9 +244,31 @@ function PaymentForm({ clientSecret, setClientSecret }: PaymentFormInternalProps
       }
     }
   }, [bookFormats]); // Only depend on bookFormats, not bookFormat, to avoid loops
+  
+  // Discount calculation function
+  const calculateDiscount = (basePrice: number, qty: number, format: string): { discountPercent: number; pricePerBook: number; totalSubtotal: number } => {
+    // Bundle option: Use the price from database (should be set to $22.48 in DB)
+    // Supports multiple bundles
+    if (format === 'bundle') {
+      const pricePerBundle = basePrice; // Use price from database
+      const discountPercent = 25; // 25% off bundle (assuming base price in DB accounts for this)
+      return { discountPercent, pricePerBook: pricePerBundle, totalSubtotal: pricePerBundle * qty };
+    }
+    
+    // All quantities – 15% off from base price
+    if (qty >= 1) {
+      const discountPercent = 15;
+      const pricePerBook = basePrice * (1 - discountPercent / 100); // Calculate 15% off from base price
+      return { discountPercent, pricePerBook, totalSubtotal: pricePerBook * qty };
+    }
+    
+    // Default: no discount (shouldn't happen with above logic)
+    return { discountPercent: 0, pricePerBook: basePrice, totalSubtotal: basePrice * qty };
+  };
 
   // Tax calculation - Separate estimated tax (step 1) from actual tax (step 2)
   const [displaySubtotal, setDisplaySubtotal] = useState<number>(24.99);
+  const [discountAmount, setDiscountAmount] = useState<number>(0);
   const [estimatedTax, setEstimatedTax] = useState<number>(0); // State-level estimate for step 1
   const [actualTax, setActualTax] = useState<number | null>(null); // Actual ZIP-based tax from Stripe (step 2)
   
@@ -247,25 +278,47 @@ function PaymentForm({ clientSecret, setClientSecret }: PaymentFormInternalProps
   
   // Calculate ESTIMATED tax (state-level) ONLY when book format changes
   // Tax does NOT update when shipping address changes - only when "Continue" is clicked
+  // Determine if product is digital (used in multiple places)
+  // Bundle is a physical product, not digital
+  const isDigital = bookFormat ? ['ebook', 'audiobook'].includes(bookFormat) && bookFormat !== 'bundle' : false;
+
   useEffect(() => {
     if (!bookFormats || !bookFormat) return;
     
-    const subtotal = bookFormats[bookFormat as keyof typeof bookFormats]?.price || 24.99;
-    setDisplaySubtotal(subtotal);
+    const basePrice = bookFormats[bookFormat as keyof typeof bookFormats]?.price || 24.99;
+    const { discountPercent, pricePerBook, totalSubtotal } = calculateDiscount(basePrice, quantity, bookFormat);
+    
+    setDisplaySubtotal(totalSubtotal);
+    // For bundle, calculate discount differently (bundle price in DB is already discounted)
+    // For other formats, discount is 15% off base price
+    if (bookFormat === 'bundle') {
+      // If bundle base price is $22.48 and represents 25% off, original would be ~$29.97
+      // For now, just show the difference from what would be 2 books at base price
+      // This assumes bundle price in DB is the discounted price already
+      const originalBundlePrice = basePrice / 0.75; // Reverse calculate from 25% discount
+      setDiscountAmount((originalBundlePrice * quantity) - totalSubtotal);
+    } else {
+      setDiscountAmount((basePrice * quantity) - totalSubtotal);
+    }
     
     // Calculate initial state-level estimate (only recalculates when format changes, not shipping)
     // User will see actual tax only after clicking "Continue to Payment"
-    const isDigital = ['ebook', 'audiobook'].includes(bookFormat);
-    const { tax: taxEstimate } = calculateTax(subtotal, shippingCountry, shippingState, isDigital);
+    const { tax: taxEstimate } = calculateTax(totalSubtotal, shippingCountry, shippingState, isDigital);
     setEstimatedTax(taxEstimate);
-  }, [bookFormats, bookFormat]); // Only depend on format, NOT shipping address
+  }, [bookFormats, bookFormat, isDigital, quantity]); // Include quantity in dependencies
+  
+  // Note: Bundle and paperback both support quantity selection now
   
   // Get the tax to display based on current step
   // In step 1 and shipping: shows "calculated at checkout" text
   // In step 2: shows actual tax calculated by Stripe
   const hasCalculatedTax = checkoutStep === 'payment' && actualTax !== null;
   const displayTax = hasCalculatedTax ? actualTax : 0; // Will show text instead of amount until calculated
-  const displayTotal = hasCalculatedTax ? displaySubtotal + displayTax : displaySubtotal; // Show subtotal only until tax calculated
+  // Only add shipping for physical products (not ebooks or audiobooks)
+  const displayShipping = isDigital ? 0 : shippingPrice;
+  const displayTotal = hasCalculatedTax 
+    ? displaySubtotal + displayTax + displayShipping 
+    : displaySubtotal + displayShipping; // Show subtotal + shipping until tax calculated
 
 
   // Helper function to clear field error when user starts typing
@@ -374,17 +427,19 @@ function PaymentForm({ clientSecret, setClientSecret }: PaymentFormInternalProps
     
     setIsProcessing(true);
     setError(null);
-    console.log('Creating payment intent...');
+    console.log('Creating Payment Intent with Stripe Tax...');
     
     try {
-      // Create payment intent to get actual tax calculation
-      const subtotal = bookFormats[bookFormat as keyof typeof bookFormats]?.price || 24.99;
-      const isDigital = ['ebook', 'audiobook'].includes(bookFormat);
+      // Calculate order details
+      const basePrice = bookFormats[bookFormat as keyof typeof bookFormats]?.price || 24.99;
+      const { totalSubtotal } = calculateDiscount(basePrice, quantity, bookFormat);
+      const shippingCost = isDigital ? 0 : shippingPrice;
       
       const requestBody = {
         email: email.trim(),
         name: `${shippingFirstName.trim()} ${shippingLastName.trim()}`.trim() || name.trim(),
         bookFormat: bookFormat, // Already validated
+        quantity: quantity,
         shippingFirstName: shippingFirstName.trim(),
         shippingLastName: shippingLastName.trim(),
         shippingAddressLine1: shippingAddressLine1.trim(),
@@ -394,9 +449,8 @@ function PaymentForm({ clientSecret, setClientSecret }: PaymentFormInternalProps
         shippingPostalCode: shippingPostalCode.trim(),
         shippingCountry: shippingCountry.trim(),
         shippingPhone: shippingPhone?.trim() || '',
-        subtotal: subtotal,
-        tax: estimatedTax, // Send estimate, Stripe will calculate actual
-        total: subtotal + estimatedTax, // Estimate, Stripe will calculate actual
+        subtotal: totalSubtotal,
+        shipping: shippingCost,
       };
       
       const response = await fetch('/api/create-payment-intent', {
@@ -413,23 +467,24 @@ function PaymentForm({ clientSecret, setClientSecret }: PaymentFormInternalProps
         throw new Error(data.error || 'Failed to create payment intent');
       }
 
-      console.log('Payment intent created, moving to payment step');
-      console.log('Actual tax calculated by Stripe:', {
+      console.log('Payment Intent created with Stripe Tax:', {
         subtotal: data.subtotal,
         tax: data.tax,
         total: data.amount,
       });
       
-      // Update with actual tax amounts from Stripe
+      // Update tax and subtotal with actual Stripe Tax calculation
       if (data.subtotal !== undefined && data.tax !== undefined) {
         setStripeSubtotal(data.subtotal);
         setStripeTax(data.tax);
-        setActualTax(data.tax);
         setDisplaySubtotal(data.subtotal);
+        setActualTax(data.tax);
       }
       
-      // Move to payment step
+      // Set clientSecret - this will cause PaymentElement to appear
       setClientSecret(data.clientSecret);
+      
+      // Move to payment step
       setCheckoutStep('payment');
       setIsProcessing(false);
     } catch (err) {
@@ -593,10 +648,14 @@ function PaymentForm({ clientSecret, setClientSecret }: PaymentFormInternalProps
       console.log('Available formats:', Object.keys(bookFormats));
       console.log('Format validation: PASSED - format exists in database');
       
+      const basePrice = bookFormats[selectedBookFormat]?.price || 24.99;
+      const { totalSubtotal } = calculateDiscount(basePrice, quantity, selectedBookFormat);
+      
       const requestBody = {
         email: email.trim(),
         name: `${shippingFirstName.trim()} ${shippingLastName.trim()}`.trim() || name.trim(),
         bookFormat: selectedBookFormat, // VALIDATED: Guaranteed valid format
+        quantity: quantity,
         shippingFirstName: shippingFirstName.trim(),
         shippingLastName: shippingLastName.trim(),
         shippingAddressLine1: shippingAddressLine1.trim(),
@@ -606,7 +665,7 @@ function PaymentForm({ clientSecret, setClientSecret }: PaymentFormInternalProps
         shippingPostalCode: shippingPostalCode.trim(),
         shippingCountry: shippingCountry.trim(),
         shippingPhone: shippingPhone?.trim() || '',
-        subtotal: displaySubtotal, // Price before tax - Stripe Tax will calculate tax automatically
+        subtotal: totalSubtotal, // Price before tax - Stripe Tax will calculate tax automatically
         tax: displayTax, // Estimate for reference (Stripe will calculate actual tax)
         total: displayTotal, // Estimate (Stripe will use actual total)
       };
@@ -799,6 +858,39 @@ function PaymentForm({ clientSecret, setClientSecret }: PaymentFormInternalProps
                       ))}
                     </select>
                   </div>
+                  
+                  <div>
+                    <Label htmlFor="quantity">Quantity *</Label>
+                    <Input
+                      id="quantity"
+                      type="number"
+                      min="1"
+                      max="100"
+                      value={quantity}
+                      onChange={(e) => {
+                        const newQuantity = parseInt(e.target.value, 10) || 1;
+                        if (newQuantity >= 1 && newQuantity <= 100) {
+                          setQuantity(newQuantity);
+                          saveState('quantity', newQuantity);
+                        }
+                      }}
+                      required
+                      className="w-full"
+                    />
+                    {bookFormat !== 'bundle' && (
+                      <p className="text-xs text-gray-500 mt-1">✨ 15% off applies to all quantities</p>
+                    )}
+                    {bookFormat === 'bundle' && (
+                      <p className="text-xs text-gray-500 mt-1">✨ 25% off bundle price - Each bundle includes Book 1 + Book 2</p>
+                    )}
+                  </div>
+                  {bookFormat === 'bundle' && (
+                    <div className="p-3 bg-green-50 border border-green-200 rounded-md">
+                      <p className="text-sm text-green-800 font-medium">✨ Bundle Special: Book 1 + Book 2</p>
+                      <p className="text-sm text-green-700 mt-1">Each bundle = $22.48 (25% off)</p>
+                    </div>
+                  )}
+                  
                   <button
                     type="button"
                     onClick={handleContinueToShipping}
@@ -1086,7 +1178,11 @@ function PaymentForm({ clientSecret, setClientSecret }: PaymentFormInternalProps
                         <PaymentElement
                           options={{
                             layout: 'tabs',
-                            paymentMethodOrder: ['apple_pay', 'google_pay', 'card', 'paypal', 'klarna', 'cashapp', 'amazon_pay'],
+                            paymentMethodOrder: ['card', 'paypal', 'klarna', 'cashapp', 'amazon_pay'],
+                            wallets: {
+                              applePay: 'auto',
+                              googlePay: 'auto',
+                            },
                           }}
                         />
                       ) : (
@@ -1136,9 +1232,24 @@ function PaymentForm({ clientSecret, setClientSecret }: PaymentFormInternalProps
             </div>
             
             <div className="flex justify-between">
-              <span className="text-gray-600">Book:</span>
-              <span className="font-medium">{bookInfo?.title || 'Waiting to Fly'}</span>
+              <span className="text-gray-600">Quantity:</span>
+              <span className="font-medium">
+                {bookFormat === 'bundle' ? `${quantity} bundle${quantity > 1 ? 's' : ''} (Book 1 + Book 2 each)` : `${quantity} book${quantity > 1 ? 's' : ''}`}
+              </span>
             </div>
+            
+            {bookFormats && bookFormat && (
+              <>
+                {discountAmount > 0 && (
+                  <div className="flex justify-between text-green-600">
+                    <span>Discount ({
+                      bookFormat === 'bundle' ? '25% bundle' : '15%'
+                    }):</span>
+                    <span className="font-medium">-${discountAmount.toFixed(2)}</span>
+                  </div>
+                )}
+              </>
+            )}
             
             <div className="flex justify-between">
               <span className="text-gray-600">Subtotal:</span>
@@ -1157,7 +1268,9 @@ function PaymentForm({ clientSecret, setClientSecret }: PaymentFormInternalProps
             
             <div className="flex justify-between">
               <span className="text-gray-600">Shipping:</span>
-              <span className="font-medium text-green-600">Free</span>
+              <span className={`font-medium ${displayShipping === 0 ? 'text-green-600' : ''}`}>
+                {displayShipping === 0 ? 'Free' : `$${displayShipping.toFixed(2)}`}
+              </span>
             </div>
             
             <div className="border-t pt-4">
@@ -1166,7 +1279,7 @@ function PaymentForm({ clientSecret, setClientSecret }: PaymentFormInternalProps
                 <span>
                   {hasCalculatedTax 
                     ? `$${displayTotal.toFixed(2)}`
-                    : `$${displaySubtotal.toFixed(2)} + tax`
+                    : `$${(displaySubtotal + displayShipping).toFixed(2)} + tax`
                   }
                 </span>
               </div>

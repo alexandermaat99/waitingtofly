@@ -91,6 +91,7 @@ export function AdminDashboard() {
       preorder_stats: 'Preorder Stats',
       preorder_benefits: 'Preorder Benefits',
       site_config: 'Footer Content',
+      shipping_price: 'Shipping Price',
     };
     if (map[key]) return map[key];
     // Fallback: Title Case and replace underscores
@@ -268,41 +269,55 @@ export function AdminDashboard() {
           <div>
             <h2 className="text-xl font-semibold text-gray-900 mb-4">Active Configurations</h2>
             <div className="grid gap-4">
-              {activeConfigs.map((config) => (
-                <Card key={config.id} className="p-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <h3 className="font-semibold text-lg">{friendlyTitle(config.config_key)}</h3>
-                        <Badge variant="default">Active</Badge>
-                        <Badge variant="outline">{friendlyTitle(config.category)}</Badge>
+              {activeConfigs.map((config) => {
+                // Display shipping price value if it's shipping_price config
+                const isShippingPrice = config.config_key === 'shipping_price';
+                const shippingValue = isShippingPrice && typeof config.config_value === 'number' 
+                  ? config.config_value 
+                  : null;
+                
+                return (
+                  <Card key={config.id} className="p-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <h3 className="font-semibold text-lg">{friendlyTitle(config.config_key)}</h3>
+                          <Badge variant="default">Active</Badge>
+                          <Badge variant="outline">{friendlyTitle(config.category)}</Badge>
+                        </div>
+                        {config.description && (
+                          <p className="text-gray-600 text-sm mb-2">{config.description}</p>
+                        )}
+                        {isShippingPrice && shippingValue !== null && (
+                          <p className="text-gray-700 text-sm mb-2">
+                            <strong>Current value:</strong> ${shippingValue.toFixed(2)}
+                            {shippingValue === 0 && <span className="text-green-600 ml-2">(Free Shipping)</span>}
+                          </p>
+                        )}
+                        <div className="text-xs text-gray-500">
+                          Updated: {new Date(config.updated_at).toLocaleString()}
+                        </div>
                       </div>
-                      {config.description && (
-                        <p className="text-gray-600 text-sm mb-2">{config.description}</p>
-                      )}
-                      <div className="text-xs text-gray-500">
-                        Updated: {new Date(config.updated_at).toLocaleString()}
+                      <div className="flex gap-2 ml-4">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setSelectedConfig(config)}
+                        >
+                          Edit
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => handleConfigDeactivate(config.config_key)}
+                        >
+                          Deactivate
+                        </Button>
                       </div>
                     </div>
-                    <div className="flex gap-2 ml-4">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setSelectedConfig(config)}
-                      >
-                        Edit
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        onClick={() => handleConfigDeactivate(config.config_key)}
-                      >
-                        Deactivate
-                      </Button>
-                    </div>
-                  </div>
-                </Card>
-              ))}
+                  </Card>
+                );
+              })}
             </div>
           </div>
 

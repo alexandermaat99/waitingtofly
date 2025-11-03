@@ -13,6 +13,7 @@ interface Order {
   email: string;
   name: string;
   book_format: string;
+  quantity: number | null;
   amount: number;
   payment_intent_id: string;
   status: string;
@@ -244,6 +245,124 @@ export function OrdersManagement() {
     return parts.join('\n');
   };
 
+  const getUnshippedOrders = () => {
+    return orders.filter(
+      order => order.status === 'completed' && 
+      (order.shipping_status === 'not_shipped' || order.shipping_status === null)
+    );
+  };
+
+  const escapeHtml = (text: string | null | undefined): string => {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  };
+
+  const handlePrintUnshipped = () => {
+    const unshippedOrders = getUnshippedOrders();
+    
+    if (unshippedOrders.length === 0) {
+      alert('No unshipped orders to print.');
+      return;
+    }
+
+    // Create a printable window
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      alert('Please allow popups to print the address list.');
+      return;
+    }
+
+    // Generate the printable HTML
+    const printContent = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Unshipped Addresses</title>
+          <style>
+            @page {
+              margin: 1in;
+            }
+            body {
+              font-family: Arial, sans-serif;
+              font-size: 12px;
+              line-height: 1.6;
+              color: #000;
+            }
+            h1 {
+              font-size: 20px;
+              margin-bottom: 20px;
+              border-bottom: 2px solid #000;
+              padding-bottom: 10px;
+            }
+            .order-item {
+              margin-bottom: 30px;
+              page-break-inside: avoid;
+              border: 1px solid #ddd;
+              padding: 15px;
+              border-radius: 4px;
+            }
+            .order-header {
+              font-weight: bold;
+              margin-bottom: 10px;
+              font-size: 14px;
+            }
+            .address-block {
+              margin-top: 10px;
+              white-space: pre-line;
+            }
+            .order-info {
+              margin-top: 8px;
+              font-size: 11px;
+              color: #666;
+            }
+            .summary {
+              margin-top: 30px;
+              padding-top: 20px;
+              border-top: 2px solid #000;
+              font-weight: bold;
+            }
+          </style>
+        </head>
+        <body>
+          <h1>Unshipped Orders - Address List</h1>
+          <div class="summary">Total: ${unshippedOrders.length} orders</div>
+          ${unshippedOrders.map((order, index) => {
+            const addressLine2 = order.shipping_address_line2 ? escapeHtml(order.shipping_address_line2) + '\n' : '';
+            const cityStateZip = [
+              escapeHtml(order.shipping_city || ''),
+              escapeHtml(order.shipping_state || ''),
+              escapeHtml(order.shipping_postal_code || '')
+            ].filter(Boolean).join(', ');
+            const addressBlock = `${escapeHtml(order.shipping_first_name || '')} ${escapeHtml(order.shipping_last_name || '')}\n${escapeHtml(order.shipping_address_line1 || '')}\n${addressLine2}${cityStateZip}\n${escapeHtml(order.shipping_country || '')}`;
+            return `
+            <div class="order-item">
+              <div class="order-header">Order ${index + 1}</div>
+              <div class="address-block">${addressBlock}</div>
+              ${order.shipping_phone ? `<div class="order-info">Phone: ${escapeHtml(order.shipping_phone)}</div>` : ''}
+              <div class="order-info">Email: ${escapeHtml(order.email)}</div>
+              <div class="order-info">Order Date: ${new Date(order.payment_completed_at || order.created_at).toLocaleDateString()}</div>
+              <div class="order-info">Book Format: ${escapeHtml(order.book_format)}</div>
+              ${order.quantity ? `<div class="order-info">Quantity: ${order.quantity}</div>` : ''}
+            </div>
+          `;
+          }).join('')}
+          <div class="summary">End of List - ${new Date().toLocaleString()}</div>
+        </body>
+      </html>
+    `;
+
+    printWindow.document.write(printContent);
+    printWindow.document.close();
+    
+    // Wait for content to load, then print
+    setTimeout(() => {
+      printWindow.print();
+      printWindow.close();
+    }, 250);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -267,8 +386,25 @@ export function OrdersManagement() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
         <h2 className="text-xl font-semibold text-gray-900">Orders Management</h2>
-        <div className="text-sm text-gray-500">
-          Total: {pagination.total} orders
+        <div className="flex items-center gap-4">
+          <div className="text-sm text-gray-500">
+            Total: {pagination.total} orders
+            {getUnshippedOrders().length > 0 && (
+              <span className="ml-2 text-orange-600 font-semibold">
+                ({getUnshippedOrders().length} unshipped)
+              </span>
+            )}
+          </div>
+          {getUnshippedOrders().length > 0 && (
+            <Button
+              onClick={handlePrintUnshipped}
+              variant="outline"
+              size="sm"
+              className="whitespace-nowrap"
+            >
+              🖨️ Print Unshipped Addresses
+            </Button>
+          )}
         </div>
       </div>
 
@@ -345,6 +481,7 @@ export function OrdersManagement() {
                   <div className="text-sm text-gray-600 space-y-1">
                     <div><strong>Email:</strong> {order.email}</div>
                     <div><strong>Book Format:</strong> {order.book_format}</div>
+                    {order.quantity && <div><strong>Quantity:</strong> {order.quantity}</div>}
                     <div><strong>Amount:</strong> {formatCurrency(order.amount)}</div>
                     {order.subtotal && (
                       <div className="text-xs text-gray-500">
@@ -461,6 +598,7 @@ export function OrdersManagement() {
                           <div className="text-sm text-gray-600 space-y-1">
                             <div><strong>Email:</strong> {order.email}</div>
                             <div><strong>Book Format:</strong> {order.book_format}</div>
+                            {order.quantity && <div><strong>Quantity:</strong> {order.quantity}</div>}
                             <div><strong>Amount:</strong> {formatCurrency(order.amount)}</div>
                             {order.subtotal && (
                               <div className="text-xs text-gray-500">

@@ -65,8 +65,7 @@ export default function Home() {
                 Stay Connected
               </h2>
               <p className="text-lg text-gray-600">
-              Be the first to hear about new releases, events, and reflections from Samly Maat. She shares short messages of encouragement to help you on your own journey of becoming.
-              </p>
+              Receive new releases, event updates, and gentle reflections that offer encouragement to help you remember your light and walk your journey with courage.              </p>
             </div>
             <PreorderForm />
           </div>

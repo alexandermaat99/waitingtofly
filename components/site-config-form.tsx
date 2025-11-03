@@ -31,7 +31,12 @@ export function SiteConfigForm({ config, onSave, onCancel }: SiteConfigFormProps
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    setFormData(config.config_value || {});
+    // Handle shipping_price which is a number, not an object
+    if (config.config_key === 'shipping_price') {
+      setFormData(config.config_value || 0);
+    } else {
+      setFormData(config.config_value || {});
+    }
   }, [config]);
 
   const handleSave = async () => {
@@ -422,6 +427,44 @@ export function SiteConfigForm({ config, onSave, onCancel }: SiteConfigFormProps
                   onChange={(e) => setFormData({...formData, countries: e.target.value})}
                   placeholder="50+"
                 />
+              </div>
+            </div>
+          </div>
+        );
+
+      case 'shipping_price':
+        // Ensure we have a valid number
+        const shippingValue = typeof formData === 'number' 
+          ? formData 
+          : (typeof formData === 'object' && formData !== null ? 0 : (parseFloat(String(formData)) || 0));
+        
+        return (
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="shipping_price">Shipping Price ($)</Label>
+              <Input
+                id="shipping_price"
+                type="number"
+                step="0.01"
+                min="0"
+                value={shippingValue}
+                onChange={(e) => {
+                  const value = parseFloat(e.target.value) || 0;
+                  setFormData(value);
+                }}
+                placeholder="0.00"
+              />
+              <p className="text-sm text-gray-500 mt-2">
+                Set the shipping price for physical book orders. Enter 0.00 for free shipping.
+                Digital products (ebook, audiobook) will always show free shipping regardless of this setting.
+              </p>
+              <div className="mt-4 p-4 bg-blue-50 rounded-md">
+                <p className="text-sm text-blue-800">
+                  <strong>Current shipping price:</strong> ${shippingValue.toFixed(2)}
+                </p>
+                <p className="text-xs text-blue-600 mt-1">
+                  This will be applied to all physical book formats (hardcover, paperback) in the checkout.
+                </p>
               </div>
             </div>
           </div>

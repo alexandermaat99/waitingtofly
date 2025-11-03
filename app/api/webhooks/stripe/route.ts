@@ -19,21 +19,155 @@ export async function POST(request: NextRequest) {
 
   try {
     switch (event.type) {
-      case 'payment_intent.succeeded': {
-        const paymentIntent = event.data.object;
+      case 'checkout.session.completed': {
+        const session = event.data.object as any;
         
-        // Update order status in database
+        // Retrieve the full session with line items and automatic tax details
+        const fullSession = await stripe.checkout.sessions.retrieve(session.id, {
+          expand: ['line_items', 'total_details.breakdown'],
+        });
+        
         const supabase = await createClient();
+        
+        // Extract tax information from Stripe Tax
+        const totalDetails = fullSession.total_details;
+        const taxAmount = totalDetails?.amount_tax ? totalDetails.amount_tax / 100 : 0;
+        const subtotalAmount = totalDetails?.amount_subtotal ? totalDetails.amount_subtotal / 100 : 0;
+        const totalAmount = fullSession.amount_total ? fullSession.amount_total / 100 : 0;
+        
+        // Calculate tax rate
+        const taxRate = subtotalAmount > 0 ? (taxAmount / subtotalAmount) : 0;
+        
+        // Update order with checkout session info and Stripe Tax amounts
+        const updateData: any = {
+          status: 'completed',
+          payment_completed_at: new Date().toISOString(),
+          subtotal: subtotalAmount,
+          tax_amount: taxAmount,
+          tax_rate: taxRate,
+          amount: totalAmount,
+        };
+        
+        // Add checkout_session_id if not already set
+        if (session.id) {
+          updateData.checkout_session_id = session.id;
+        }
+        
+        // Add payment_intent_id if available (for backwards compatibility)
+        if (session.payment_intent) {
+          updateData.payment_intent_id = typeof session.payment_intent === 'string' 
+            ? session.payment_intent 
+            : session.payment_intent.id;
+        }
+        
         const { error } = await supabase
           .from('orders')
-          .update({ 
-            status: 'completed',
-            payment_completed_at: new Date().toISOString()
-          })
+          .update(updateData)
+          .eq('checkout_session_id', session.id);
+
+        if (error) {
+          console.error('Failed to update order:', error);
+        } else {
+          console.log('✅ Order updated with Stripe Tax amounts:', {
+            order_id: session.metadata?.order_id,
+            checkout_session_id: session.id,
+            subtotal: subtotalAmount,
+            tax_amount: taxAmount,
+            total: totalAmount,
+            tax_rate: `${(taxRate * 100).toFixed(2)}%`,
+          });
+        }
+        break;
+      }
+
+      case 'payment_intent.succeeded': {
+        const paymentIntent = event.data.object as any;
+        
+        const supabase = await createClient();
+        
+        // Retrieve the full PaymentIntent to get tax information
+        // Stripe automatically creates a tax transaction when PaymentIntent succeeds with linked tax calculation
+        const fullPaymentIntent = await stripe.paymentIntents.retrieve(paymentIntent.id, {
+          expand: ['latest_charge', 'charges'],
+        });
+        
+        // Try to get tax information from metadata or calculate from amount
+        // If tax calculation was linked, the amount includes tax
+        let taxAmount = 0;
+        let subtotalAmount = 0;
+        let taxRate = 0;
+        
+        // First, get the existing order to see what we already have
+        const existingOrder = await supabase
+          .from('orders')
+          .select('subtotal, tax_amount, shipping_price')
+          .eq('payment_intent_id', paymentIntent.id)
+          .single();
+        
+        // Check if we have tax_calculation_id in metadata and need to retrieve tax details
+        const taxCalculationId = paymentIntent.metadata?.tax_calculation_id;
+        
+        if (taxCalculationId && existingOrder.data) {
+          try {
+            // Retrieve the tax calculation to get tax details
+            const taxCalculation = await stripe.tax.calculations.retrieve(taxCalculationId);
+            taxAmount = (taxCalculation.tax_amount_exclusive || 0) / 100; // Convert from cents
+            
+            // Use the stored subtotal from the order (product only, doesn't include shipping)
+            // The tax calculation includes tax on both product and shipping
+            subtotalAmount = existingOrder.data.subtotal || 0;
+            taxRate = subtotalAmount > 0 ? (taxAmount / subtotalAmount) : 0;
+            
+            console.log('✅ Tax information from tax calculation:', {
+              calculation_id: taxCalculationId,
+              tax_amount: taxAmount,
+              subtotal: subtotalAmount,
+              tax_rate: `${(taxRate * 100).toFixed(2)}%`,
+            });
+          } catch (taxError) {
+            console.warn('Could not retrieve tax calculation, using stored values:', taxError);
+            // Use stored values from order
+            if (existingOrder.data) {
+              subtotalAmount = existingOrder.data.subtotal || 0;
+              taxAmount = existingOrder.data.tax_amount || 0;
+              taxRate = subtotalAmount > 0 ? (taxAmount / subtotalAmount) : 0;
+            }
+          }
+        } else if (existingOrder.data) {
+          // No tax calculation linked or already have stored values, use what's in the order
+          subtotalAmount = existingOrder.data.subtotal || 0;
+          taxAmount = existingOrder.data.tax_amount || 0;
+          taxRate = subtotalAmount > 0 ? (taxAmount / subtotalAmount) : 0;
+        }
+        
+        const updateData: any = {
+          status: 'completed',
+          payment_completed_at: new Date().toISOString(),
+        };
+        
+        // Update tax information if we have it
+        if (taxAmount > 0 || subtotalAmount > 0) {
+          updateData.subtotal = subtotalAmount;
+          updateData.tax_amount = taxAmount;
+          updateData.tax_rate = taxRate;
+          updateData.amount = paymentIntent.amount / 100; // Total amount including tax
+        }
+        
+        const { error } = await supabase
+          .from('orders')
+          .update(updateData)
           .eq('payment_intent_id', paymentIntent.id);
 
         if (error) {
           console.error('Failed to update order:', error);
+        } else {
+          console.log('✅ Payment Intent succeeded - Order updated:', {
+            payment_intent_id: paymentIntent.id,
+            subtotal: subtotalAmount,
+            tax_amount: taxAmount,
+            total: paymentIntent.amount / 100,
+            tax_rate: `${(taxRate * 100).toFixed(2)}%`,
+          });
         }
 
         console.log('Payment succeeded:', paymentIntent.id);
@@ -43,7 +177,6 @@ export async function POST(request: NextRequest) {
       case 'payment_intent.payment_failed': {
         const paymentIntent = event.data.object;
         
-        // Update order status to failed
         const supabase = await createClient();
         const { error } = await supabase
           .from('orders')

@@ -11,6 +11,7 @@ export async function POST(request: NextRequest) {
       email, 
       name, 
       bookFormat,
+      quantity = 1,
       shippingFirstName,
       shippingLastName,
       shippingAddressLine1,
@@ -21,6 +22,7 @@ export async function POST(request: NextRequest) {
       shippingCountry = 'US',
       shippingPhone,
       subtotal,
+      shipping = 0,
       tax,
       total
     } = body;
@@ -91,7 +93,7 @@ export async function POST(request: NextRequest) {
       // Try to get a valid fallback format
       const physicalFormats = availableFormats.filter(key => !['ebook', 'audiobook'].includes(key));
       const fallbackFormat = physicalFormats.length > 0 
-        ? (physicalFormats.includes('hardcover') ? 'hardcover' : (physicalFormats.includes('paperback') ? 'paperback' : physicalFormats[0]))
+        ? (physicalFormats.includes('hardcover') ? 'hardcover' : (physicalFormats.includes('paperback') ? 'paperback' : (physicalFormats.includes('bundle') ? 'bundle' : physicalFormats[0])))
         : availableFormats[0];
       
       console.error('Rejecting invalid format. Valid formats are:', availableFormats);
@@ -106,10 +108,17 @@ export async function POST(request: NextRequest) {
     console.log('✅ Format validation PASSED:', bookFormat);
     
     // Determine if product is digital (for Stripe Tax product tax code)
-    const isDigital = ['ebook', 'audiobook'].includes(bookFormat);
+    // Bundle is a physical product, not digital
+    const isDigital = ['ebook', 'audiobook'].includes(bookFormat) && bookFormat !== 'bundle';
     
     // Use subtotal from frontend (price before tax), or fallback to base price from database
     const subtotalAmount = subtotal || bookFormats[bookFormat as keyof typeof bookFormats]?.price || bookFormats?.hardcover?.price || 24.99;
+    
+    // Get shipping cost (0 for digital products, actual shipping for physical)
+    const shippingAmount = isDigital ? 0 : (shipping || 0);
+    
+    // Amount before tax (subtotal + shipping)
+    const amountBeforeTax = subtotalAmount + shippingAmount;
 
     // Determine product tax code for Stripe Tax
     // 'txcd_99999999' = General tangible personal property (physical books)
@@ -117,30 +126,166 @@ export async function POST(request: NextRequest) {
     const productTaxCode = isDigital ? 'txcd_31000000' : 'txcd_99999999';
     const bookFormatName = bookFormats[bookFormat]?.name || bookFormat;
     
-    // Create payment intent with Stripe Tax enabled (if available)
-    // Note: Stripe Tax must be enabled in Dashboard first
-    // If Stripe Tax isn't enabled, this will fall back to manual tax calculation
-    const paymentIntentParams: any = {
-      amount: formatAmountForStripe(subtotalAmount),
+    // Step 1: Calculate tax using Stripe Tax API
+    console.log('📊 Calculating tax with Stripe Tax API:', {
+      subtotal: subtotalAmount,
+      shipping: shippingAmount,
+      amountBeforeTax,
+      shippingCountry,
+      shippingState,
+      shippingCity,
+      shippingPostalCode,
+      shippingAddressLine1,
+      isDigital,
+      productTaxCode,
+    });
+    
+    let taxCalculation;
+    let finalTaxAmount = 0;
+    let finalTotal = amountBeforeTax;
+    
+    try {
+      // Validate required address fields for tax calculation
+      if (!shippingAddressLine1 || !shippingCity || !shippingPostalCode || !shippingCountry) {
+        throw new Error('Missing required address fields for tax calculation');
+      }
+      
+      // Create line items for tax calculation
+      const lineItems = [];
+      
+      // Add product line item
+      lineItems.push({
+        amount: formatAmountForStripe(subtotalAmount),
+        reference: 'book_preorder',
+        tax_code: productTaxCode,
+      });
+      
+      // Add shipping as a separate line item if applicable
+      if (shippingAmount > 0) {
+        lineItems.push({
+          amount: formatAmountForStripe(shippingAmount),
+          reference: 'shipping',
+          tax_code: 'txcd_99999999', // Shipping is typically taxable
+        });
+      }
+      
+      // Prepare address for tax calculation (Stripe requires specific format)
+      const taxAddress: any = {
+        line1: shippingAddressLine1.trim(),
+        city: shippingCity.trim(),
+        postal_code: shippingPostalCode.trim(),
+        country: shippingCountry.trim().toUpperCase() || 'US',
+      };
+      
+      // Add optional fields if present
+      if (shippingAddressLine2 && shippingAddressLine2.trim()) {
+        taxAddress.line2 = shippingAddressLine2.trim();
+      }
+      if (shippingState && shippingState.trim()) {
+        taxAddress.state = shippingState.trim().toUpperCase();
+      }
+      
+      console.log('📍 Address being sent to Stripe Tax:', taxAddress);
+      console.log('📦 Line items for tax calculation:', lineItems);
+      
+      // Create tax calculation using Stripe Tax API
+      taxCalculation = await stripe.tax.calculations.create({
+        currency: 'usd',
+        line_items: lineItems,
+        customer_details: {
+          address: taxAddress,
+          address_source: 'shipping',
+        },
+      });
+      
+      console.log('✅ Stripe Tax Calculation created:', {
+        calculation_id: taxCalculation.id,
+        amount_total: taxCalculation.amount_total,
+        tax_amount_exclusive: taxCalculation.tax_amount_exclusive,
+        tax_amount_inclusive: taxCalculation.tax_amount_inclusive,
+        tax_breakdown: taxCalculation.tax_breakdown,
+      });
+      
+      // Log detailed tax breakdown for debugging
+      if (taxCalculation.tax_breakdown && taxCalculation.tax_breakdown.length > 0) {
+        console.log('🔍 Tax Breakdown Details:');
+        taxCalculation.tax_breakdown.forEach((breakdown: any, index: number) => {
+          console.log(`  Item ${index + 1}:`, {
+            amount: breakdown.amount,
+            taxable_amount: breakdown.taxable_amount,
+            taxability_reason: breakdown.taxability_reason,
+            tax_rate_details: breakdown.tax_rate_details,
+          });
+        });
+      } else {
+        console.warn('⚠️ No tax breakdown returned from Stripe Tax');
+      }
+      
+      // Check why tax is not being collected
+      if (taxCalculation.tax_amount_exclusive === 0) {
+        const isTestMode = process.env.STRIPE_SECRET_KEY?.startsWith('sk_test_');
+        console.warn('⚠️ WARNING: Stripe Tax returned $0 tax. Possible reasons:');
+        console.warn('  1. Tax registrations may not be set up in Stripe Dashboard');
+        if (isTestMode) {
+          console.warn('     → In TEST MODE: Go to https://dashboard.stripe.com/test/settings/tax');
+          console.warn('     → Add test tax registrations (e.g., California with test reg number)');
+          console.warn('     → Use any test registration number like "TEST-123456"');
+        } else {
+          console.warn('     → In LIVE MODE: Go to https://dashboard.stripe.com/settings/tax');
+          console.warn('     → Add your real tax registrations with actual registration numbers');
+        }
+        console.warn('  2. Business information may not be complete in Stripe Dashboard');
+        console.warn('  3. The shipping address might be in a non-taxable jurisdiction');
+        console.warn('  4. The product might be tax-exempt in this location');
+        console.warn('  5. You may not be registered to collect tax in this jurisdiction');
+        console.warn('  Address used:', taxAddress);
+        console.warn('  Mode:', isTestMode ? 'TEST' : 'LIVE');
+      }
+      
+      // Extract tax amount (in cents) and convert to dollars
+      finalTaxAmount = formatAmountFromStripe(taxCalculation.tax_amount_exclusive || 0);
+      // Use amount_total from calculation (includes tax)
+      finalTotal = formatAmountFromStripe(taxCalculation.amount_total || formatAmountForStripe(amountBeforeTax));
+      
+      console.log('💰 Final amounts:', {
+        subtotal: subtotalAmount,
+        shipping: shippingAmount,
+        tax: finalTaxAmount,
+        total: finalTotal,
+      });
+    } catch (taxError: any) {
+      console.error('❌ Stripe Tax calculation failed:', {
+        error: taxError?.message,
+        code: taxError?.code,
+        type: taxError?.type,
+      });
+      
+      // Fallback to manual tax calculation if Stripe Tax fails
+      console.log('⚠️ Falling back to manual tax calculation');
+      const { tax: calculatedTax } = calculateTax(amountBeforeTax, shippingCountry, shippingState, isDigital);
+      finalTaxAmount = calculatedTax;
+      finalTotal = amountBeforeTax + finalTaxAmount;
+    }
+    
+    // Step 2: Create payment intent with tax calculation linked (if available)
+    const paymentIntentData: any = {
+      amount: formatAmountForStripe(finalTotal),
       currency: 'usd',
       automatic_payment_methods: {
         enabled: true,
         allow_redirects: 'always', // Required for PayPal and other redirect-based payment methods
       },
-    };
-    
-    // Add automatic_tax parameter - will be ignored if Stripe Tax isn't enabled in Dashboard
-    // We'll catch any errors and fall back to manual calculation
-    paymentIntentParams.automatic_tax = {
-      enabled: true,
-    };
-    
-    let paymentIntent;
-    try {
-      paymentIntent = await stripe.paymentIntents.create({
-        ...paymentIntentParams,
-      // Shipping address for tax calculation (required when using Stripe Tax)
-      // Also useful for Stripe's fraud detection and shipping info
+      // Link tax calculation to PaymentIntent if available
+      ...(taxCalculation && {
+        hooks: {
+          inputs: {
+            tax: {
+              calculation: taxCalculation.id,
+            },
+          },
+        },
+      }),
+      // Shipping address for Stripe's fraud detection and shipping info
       shipping: {
         name: `${shippingFirstName} ${shippingLastName}`,
         address: {
@@ -154,9 +299,11 @@ export async function POST(request: NextRequest) {
         phone: shippingPhone || undefined,
       },
       metadata: {
+        tax_calculation_id: taxCalculation?.id || '',
         email,
         name,
         bookFormat,
+        quantity: quantity.toString(),
         bookTitle: 'Waiting to Fly',
         shippingFirstName,
         shippingLastName,
@@ -167,111 +314,17 @@ export async function POST(request: NextRequest) {
         shippingPostalCode,
         shippingCountry,
         shippingPhone: shippingPhone || '',
-        product_tax_code: productTaxCode, // Stored for reference
+        product_tax_code: productTaxCode,
         is_digital: isDigital.toString(),
       },
-      });
-    } catch (stripeError: any) {
-      // If automatic_tax parameter is not recognized, remove it and retry
-      if (stripeError.message?.includes('automatic_tax') || stripeError.code === 'parameter_unknown') {
-        console.log('⚠️ Stripe Tax not available (not enabled in Dashboard), using manual tax calculation');
-        // Remove automatic_tax and retry without it
-        delete paymentIntentParams.automatic_tax;
-        paymentIntent = await stripe.paymentIntents.create({
-          ...paymentIntentParams,
-          shipping: {
-            name: `${shippingFirstName} ${shippingLastName}`,
-            address: {
-              line1: shippingAddressLine1,
-              line2: shippingAddressLine2 || undefined,
-              city: shippingCity,
-              state: shippingState || undefined,
-              postal_code: shippingPostalCode,
-              country: shippingCountry,
-            },
-            phone: shippingPhone || undefined,
-          },
-          metadata: {
-            email,
-            name,
-            bookFormat,
-            bookTitle: 'Waiting to Fly',
-            shippingFirstName,
-            shippingLastName,
-            shippingAddressLine1,
-            shippingAddressLine2: shippingAddressLine2 || '',
-            shippingCity,
-            shippingState: shippingState || '',
-            shippingPostalCode,
-            shippingCountry,
-            shippingPhone: shippingPhone || '',
-            product_tax_code: productTaxCode,
-            is_digital: isDigital.toString(),
-          },
-        });
-      } else {
-        // Some other error, re-throw it
-        throw stripeError;
-      }
+    };
+    
+    if (taxCalculation) {
+      console.log('🔗 Linked tax calculation to PaymentIntent:', taxCalculation.id);
     }
     
-    // Get Stripe Tax calculated amount (Stripe Tax is now enabled!)
-    let stripeTaxAmount = 0;
-    let stripeTotal = subtotalAmount;
-    let usingStripeTax = false;
-    
-    // Check if payment intent was created with automatic_tax enabled
-    // Type assertion needed because automatic_tax may not be in type definition yet
-    const paymentIntentWithTax = paymentIntent as any;
-    if (paymentIntentWithTax.automatic_tax?.enabled) {
-      try {
-        // Retrieve payment intent to get Stripe Tax calculation
-        // Stripe Tax calculates asynchronously, so we retrieve it after creation
-        const retrievedPaymentIntent = await stripe.paymentIntents.retrieve(paymentIntent.id, {
-          expand: ['automatic_tax.calculation'],
-        });
-        
-        // Type assertion needed because automatic_tax may not be in type definition yet
-        const retrievedPaymentIntentWithTax = retrievedPaymentIntent as any;
-        const automaticTax = retrievedPaymentIntentWithTax.automatic_tax;
-        
-        if (automaticTax && automaticTax.status === 'complete' && automaticTax.amount !== null && automaticTax.amount !== undefined) {
-          // ✅ Stripe Tax successfully calculated tax!
-          stripeTaxAmount = formatAmountFromStripe(automaticTax.amount);
-          stripeTotal = subtotalAmount + stripeTaxAmount;
-          usingStripeTax = true;
-          
-          console.log('✅ Stripe Tax Calculation SUCCESS:', {
-            subtotal: subtotalAmount,
-            tax_calculated_by_stripe: stripeTaxAmount,
-            total_with_tax: stripeTotal,
-            tax_rate_percentage: stripeTaxAmount > 0 ? ((stripeTaxAmount / subtotalAmount) * 100).toFixed(2) + '%' : '0%',
-            shipping_location: `${shippingCity}, ${shippingState} ${shippingPostalCode}`,
-            tax_status: automaticTax.status,
-          });
-        } else {
-          // Stripe Tax is enabled but calculation not complete or failed
-          console.log('⚠️ Stripe Tax enabled but calculation incomplete. Status:', automaticTax?.status);
-          console.log('   Falling back to manual tax calculation');
-          const { tax: manualTax } = calculateTax(subtotalAmount, shippingCountry, shippingState, isDigital);
-          stripeTaxAmount = manualTax;
-          stripeTotal = subtotalAmount + manualTax;
-        }
-      } catch (taxError: any) {
-        // Error retrieving tax info, fall back to manual calculation
-        console.log('⚠️ Error retrieving Stripe Tax calculation:', taxError?.message);
-        console.log('   Falling back to manual tax calculation');
-        const { tax: manualTax } = calculateTax(subtotalAmount, shippingCountry, shippingState, isDigital);
-        stripeTaxAmount = manualTax;
-        stripeTotal = subtotalAmount + manualTax;
-      }
-    } else {
-      // automatic_tax was not enabled on payment intent (removed in fallback), use manual calculation
-      console.log('ℹ️ Using manual tax calculation (Stripe Tax not enabled on payment intent)');
-      const { tax: manualTax } = calculateTax(subtotalAmount, shippingCountry, shippingState, isDigital);
-      stripeTaxAmount = manualTax;
-      stripeTotal = subtotalAmount + manualTax;
-    }
+    // Create the PaymentIntent
+    const paymentIntent = await stripe.paymentIntents.create(paymentIntentData);
 
     // Save order to database with shipping information
     // FINAL SAFETY CHECK: Ensure format is valid before saving
@@ -289,7 +342,8 @@ export async function POST(request: NextRequest) {
         email,
         name,
         book_format: bookFormat, // Format has been validated above
-        amount: stripeTotal, // Use total with tax (Stripe Tax will handle actual collection)
+        quantity: quantity || 1,
+        amount: finalTotal, // Use total with tax (manual tax calculation)
         payment_intent_id: paymentIntent.id,
         status: 'pending',
         book_title: 'Waiting to Fly',
@@ -303,8 +357,8 @@ export async function POST(request: NextRequest) {
         shipping_country: shippingCountry,
         shipping_phone: shippingPhone || null,
         subtotal: subtotalAmount,
-        tax_amount: stripeTaxAmount, // Use Stripe Tax calculated amount
-        tax_rate: stripeTaxAmount / subtotalAmount, // Calculate rate from Stripe Tax
+        tax_amount: finalTaxAmount, // Stripe Tax calculation (or fallback to manual)
+        tax_rate: subtotalAmount > 0 ? (finalTaxAmount / subtotalAmount) : 0, // Calculate rate from tax
     };
     
     console.log('Inserting order with book_format:', orderData.book_format);
@@ -323,10 +377,10 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       clientSecret: paymentIntent.client_secret,
-      amount: stripeTotal, // Return total with tax included
+      amount: finalTotal, // Return total with tax included
       subtotal: subtotalAmount,
-      tax: stripeTaxAmount,
-      using_stripe_tax: usingStripeTax, // Indicate if Stripe Tax was used
+      shipping: shippingAmount,
+      tax: finalTaxAmount,
     });
   } catch (error) {
     console.error('Payment intent creation failed:', error);
