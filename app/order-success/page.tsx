@@ -3,10 +3,10 @@
 import { Card } from "@/components/ui/card";
 import { getBookInfo } from "@/lib/site-config-client";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 
-export default function OrderSuccessPage() {
+function OrderSuccessContent() {
   const [bookInfo, setBookInfo] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const searchParams = useSearchParams();
@@ -65,8 +65,6 @@ export default function OrderSuccessPage() {
           </ul>
         </div>
 
-
-
         <div className="space-y-3">
           <Link 
             href="/"
@@ -74,10 +72,24 @@ export default function OrderSuccessPage() {
           >
             Back to Home
           </Link>
-          
         </div>
       </Card>
     </main>
+  );
+}
+
+export default function OrderSuccessPage() {
+  return (
+    <Suspense fallback={
+      <main className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
+          <p className="mt-2 text-gray-600">Loading...</p>
+        </div>
+      </main>
+    }>
+      <OrderSuccessContent />
+    </Suspense>
   );
 }
 
