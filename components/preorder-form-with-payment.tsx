@@ -1289,11 +1289,11 @@ function PaymentForm({ clientSecret, setClientSecret }: PaymentFormInternalProps
 function PaymentFormWrapper({ onSuccess }: PreorderFormWithPaymentProps) {
   const [clientSecret, setClientSecret] = useState<string | null>(null);
 
-  // Remount Elements when clientSecret changes to ensure wallets initialize with correct amount
-  // This ensures Apple Pay/Google Pay get the correct amount from the PaymentIntent
+  // Keep Elements mounted with stable key - Stripe handles clientSecret updates via options
+  // This prevents PaymentForm from remounting and losing form state
   return (
     <Elements 
-      key={clientSecret || "payment-elements-placeholder"} // Change key when clientSecret is set
+      key="payment-elements" // Stable key - never changes
       stripe={stripePromise} 
       options={
         clientSecret 
