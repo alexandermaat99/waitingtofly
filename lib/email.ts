@@ -114,14 +114,12 @@ ${data.shippingAddress.country}
         <span style="color: #666; font-size: 14px;">Tax:</span>
         <span style="color: #333; font-size: 14px;">${formatCurrency(data.taxAmount)}</span>
       </div>
-
-      
-      ${data.shippingAmount > 0 ? `
+      ` : ''}${data.shippingAmount > 0 ? `
       <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
         <span style="color: #666; font-size: 14px;">Shipping:</span>
         <span style="color: #333; font-size: 14px;">${formatCurrency(data.shippingAmount)}</span>
       </div>
-
+      ` : ''}
       
       <div style="display: flex; justify-content: space-between; margin-top: 15px; padding-top: 15px; border-top: 2px solid #e5e7eb;">
         <strong style="color: #333; font-size: 16px;">Total:</strong>
@@ -281,7 +279,7 @@ ${data.shippingAddress.country}
         <strong style="color: #666; font-size: 14px;">Checkout Session ID:</strong>
         <span style="color: #333; font-size: 14px; margin-left: 10px; font-family: monospace; word-break: break-all;">${data.checkoutSessionId}</span>
       </div>
-
+      ` : ''}
     </div>
 
     <!-- Order Details -->
@@ -325,14 +323,13 @@ ${data.shippingAddress.country}
         <span style="color: #666; font-size: 14px;">Tax:</span>
         <span style="color: #333; font-size: 14px;">${formatCurrency(data.taxAmount)}</span>
       </div>
-
-      
+      ` : ''}
       ${data.shippingAmount > 0 ? `
       <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
         <span style="color: #666; font-size: 14px;">Shipping:</span>
         <span style="color: #333; font-size: 14px;">${formatCurrency(data.shippingAmount)}</span>
       </div>
-
+      ` : ''}
       
       <div style="display: flex; justify-content: space-between; margin-top: 15px; padding-top: 15px; border-top: 2px solid #e5e7eb;">
         <strong style="color: #333; font-size: 16px;">Total:</strong>
@@ -345,17 +342,17 @@ ${data.shippingAddress.country}
       <p style="color: #666; font-size: 12px; margin: 0;">
         This is an automated notification from the Waiting to Fly order system.
       </p>
-      <p style="color: #999; font-size: 11px; margin: 10px 0 0 0;">
-        Order received at ${new Date().toLocaleString()}
-      </p>
-    </div>
-  </div>
-</body>
-</html>
+                <p style="color: #999; font-size: 11px; margin: 10px 0 0 0;">
+            Order received at ${new Date().toLocaleString()}
+          </p>
+        </div>
+      </div>
+    </body>
+    </html>
     `.trim();
 
-    const text = `
-🔔 NEW ORDER RECEIVED - Waiting to Fly
+        const text = `
+    🔔 NEW ORDER RECEIVED - Waiting to Fly
 
 A new order has been placed and payment has been confirmed.
 
@@ -368,7 +365,7 @@ ${data.checkoutSessionId ? `Checkout Session ID: ${data.checkoutSessionId}\n` : 
 ORDER DETAILS
 Book: ${data.bookTitle}
 Format: ${data.bookFormat}
-<div style="margin-bottom: 15px;"><strong style="color: #666; font-size: 14px;">Quantity:</strong><span style="color: #333; font-size: 14px; margin-left: 10px;">${data.quantity}</span></div>Quantity: ${data.quantity}\n` : ''}
+Quantity: ${data.quantity}
 
 SHIPPING ADDRESS
 ${shippingAddressText}
