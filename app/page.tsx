@@ -3,7 +3,7 @@
 import { BookHero } from "@/components/book-hero";
 import { PreorderForm } from "@/components/preorder-form";
 import { AboutAuthor } from "@/components/about-author";
-import { Forword } from "@/components/forword";
+import { Foreword } from "@/components/foreword";
 import { Testimonials } from "@/components/testimonials";
 import { getSiteConfigData } from "@/lib/site-config-client";
 import Link from "next/link";
@@ -75,7 +75,7 @@ export default function Home() {
         
         <AboutAuthor />
         
-        <Forword />
+        <Foreword />
 
         {/* Footer */}
         <footer className="w-full bg-green-900 text-white py-16">
@@ -92,7 +92,7 @@ export default function Home() {
                 <ul className="space-y-2 text-gray-400">
                   <li><Link href="#about" scroll={true} className="hover:text-white transition-colors duration-200">About the Book</Link></li>
                   <li><Link href="#author" scroll={true} className="hover:text-white transition-colors duration-200">About the Author</Link></li>
-                  <li><Link href="#preorder" scroll={true} className="hover:text-white transition-colors duration-200">Preorder</Link></li>
+                  <li><Link href="/checkout" className="hover:text-white transition-colors duration-200">Preorder</Link></li>
                 </ul>
               </div>
               <div>

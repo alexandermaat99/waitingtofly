@@ -75,6 +75,7 @@ function PaymentForm({ clientSecret, setClientSecret }: PaymentFormInternalProps
 
   // Quantity and discount state
   const [quantity, setQuantity] = useState(() => getStoredState('quantity', 1));
+  const [quantityInput, setQuantityInput] = useState(() => String(getStoredState('quantity', 1)));
 
   // Save form state to localStorage whenever it changes
   useEffect(() => {
@@ -327,6 +328,34 @@ function PaymentForm({ clientSecret, setClientSecret }: PaymentFormInternalProps
     
     console.log('✅ handleContinueToShipping called!');
     
+    // Validate and normalize quantity
+    const qtyValue = quantityInput.trim();
+    let finalQuantity = quantity;
+    if (qtyValue === '' || qtyValue === '0') {
+      finalQuantity = 1;
+      setQuantity(1);
+      setQuantityInput('1');
+      saveState('quantity', 1);
+    } else {
+      const numValue = parseInt(qtyValue, 10);
+      if (isNaN(numValue) || numValue < 1) {
+        finalQuantity = 1;
+        setQuantity(1);
+        setQuantityInput('1');
+        saveState('quantity', 1);
+      } else if (numValue > 100) {
+        finalQuantity = 100;
+        setQuantity(100);
+        setQuantityInput('100');
+        saveState('quantity', 100);
+      } else {
+        finalQuantity = numValue;
+        setQuantity(numValue);
+        setQuantityInput(String(numValue));
+        saveState('quantity', numValue);
+      }
+    }
+    
     // Validate order information
     const errors: Record<string, boolean> = {};
     if (!bookFormat) {
@@ -364,6 +393,34 @@ function PaymentForm({ clientSecret, setClientSecret }: PaymentFormInternalProps
       shippingCity: shippingCity.trim(),
       shippingPostalCode: shippingPostalCode.trim(),
     });
+    
+    // Validate and normalize quantity
+    const qtyValue = quantityInput.trim();
+    let finalQuantity = quantity;
+    if (qtyValue === '' || qtyValue === '0') {
+      finalQuantity = 1;
+      setQuantity(1);
+      setQuantityInput('1');
+      saveState('quantity', 1);
+    } else {
+      const numValue = parseInt(qtyValue, 10);
+      if (isNaN(numValue) || numValue < 1) {
+        finalQuantity = 1;
+        setQuantity(1);
+        setQuantityInput('1');
+        saveState('quantity', 1);
+      } else if (numValue > 100) {
+        finalQuantity = 100;
+        setQuantity(100);
+        setQuantityInput('100');
+        saveState('quantity', 100);
+      } else {
+        finalQuantity = numValue;
+        setQuantity(numValue);
+        setQuantityInput(String(numValue));
+        saveState('quantity', numValue);
+      }
+    }
     
     // Validate shipping information
     const errors: Record<string, boolean> = {};
@@ -418,14 +475,14 @@ function PaymentForm({ clientSecret, setClientSecret }: PaymentFormInternalProps
     try {
       // Calculate order details
       const basePrice = bookFormats[bookFormat as keyof typeof bookFormats]?.price || 24.99;
-      const { totalSubtotal } = calculateDiscount(basePrice, quantity, bookFormat);
+      const { totalSubtotal } = calculateDiscount(basePrice, finalQuantity, bookFormat);
       const shippingCost = isDigital ? 0 : shippingPrice;
       
       const requestBody = {
         email: email.trim(),
         name: `${shippingFirstName.trim()} ${shippingLastName.trim()}`.trim() || name.trim(),
         bookFormat: bookFormat, // Already validated
-        quantity: quantity,
+        quantity: finalQuantity,
         shippingFirstName: shippingFirstName.trim(),
         shippingLastName: shippingLastName.trim(),
         shippingAddressLine1: shippingAddressLine1.trim(),
@@ -486,6 +543,34 @@ function PaymentForm({ clientSecret, setClientSecret }: PaymentFormInternalProps
     if (e) {
       e.preventDefault();
       e.stopPropagation();
+    }
+    
+    // Validate and normalize quantity
+    const qtyValue = quantityInput.trim();
+    let finalQuantity = quantity;
+    if (qtyValue === '' || qtyValue === '0') {
+      finalQuantity = 1;
+      setQuantity(1);
+      setQuantityInput('1');
+      saveState('quantity', 1);
+    } else {
+      const numValue = parseInt(qtyValue, 10);
+      if (isNaN(numValue) || numValue < 1) {
+        finalQuantity = 1;
+        setQuantity(1);
+        setQuantityInput('1');
+        saveState('quantity', 1);
+      } else if (numValue > 100) {
+        finalQuantity = 100;
+        setQuantity(100);
+        setQuantityInput('100');
+        saveState('quantity', 100);
+      } else {
+        finalQuantity = numValue;
+        setQuantity(numValue);
+        setQuantityInput(String(numValue));
+        saveState('quantity', numValue);
+      }
     }
     
     // Validate bookFormat is set
@@ -636,13 +721,13 @@ function PaymentForm({ clientSecret, setClientSecret }: PaymentFormInternalProps
       console.log('Format validation: PASSED - format exists in database');
       
       const basePrice = bookFormats[selectedBookFormat]?.price || 24.99;
-      const { totalSubtotal } = calculateDiscount(basePrice, quantity, selectedBookFormat);
+      const { totalSubtotal } = calculateDiscount(basePrice, finalQuantity, selectedBookFormat);
       
       const requestBody = {
         email: email.trim(),
         name: `${shippingFirstName.trim()} ${shippingLastName.trim()}`.trim() || name.trim(),
         bookFormat: selectedBookFormat, // VALIDATED: Guaranteed valid format
-        quantity: quantity,
+        quantity: finalQuantity,
         shippingFirstName: shippingFirstName.trim(),
         shippingLastName: shippingLastName.trim(),
         shippingAddressLine1: shippingAddressLine1.trim(),
@@ -853,12 +938,42 @@ function PaymentForm({ clientSecret, setClientSecret }: PaymentFormInternalProps
                       type="number"
                       min="1"
                       max="100"
-                      value={quantity}
+                      value={quantityInput}
                       onChange={(e) => {
-                        const newQuantity = parseInt(e.target.value, 10) || 1;
-                        if (newQuantity >= 1 && newQuantity <= 100) {
-                          setQuantity(newQuantity);
-                          saveState('quantity', newQuantity);
+                        const value = e.target.value;
+                        setQuantityInput(value);
+                        // Allow empty string for typing
+                        if (value === '') {
+                          return;
+                        }
+                        const numValue = parseInt(value, 10);
+                        if (!isNaN(numValue) && numValue >= 1 && numValue <= 100) {
+                          setQuantity(numValue);
+                          saveState('quantity', numValue);
+                        }
+                      }}
+                      onBlur={(e) => {
+                        const value = e.target.value.trim();
+                        // If empty or 0, default to 1
+                        if (value === '' || value === '0') {
+                          setQuantityInput('1');
+                          setQuantity(1);
+                          saveState('quantity', 1);
+                        } else {
+                          const numValue = parseInt(value, 10);
+                          if (isNaN(numValue) || numValue < 1) {
+                            setQuantityInput('1');
+                            setQuantity(1);
+                            saveState('quantity', 1);
+                          } else if (numValue > 100) {
+                            setQuantityInput('100');
+                            setQuantity(100);
+                            saveState('quantity', 100);
+                          } else {
+                            setQuantityInput(String(numValue));
+                            setQuantity(numValue);
+                            saveState('quantity', numValue);
+                          }
                         }
                       }}
                       required
@@ -1219,7 +1334,7 @@ function PaymentForm({ clientSecret, setClientSecret }: PaymentFormInternalProps
             <div className="flex justify-between">
               <span className="text-gray-600">Quantity:</span>
               <span className="font-medium">
-                {bookFormat === 'bundle' ? `${quantity} bundle${quantity > 1 ? 's' : ''} (Book 1 + Book 2 each)` : `${quantity} book${quantity > 1 ? 's' : ''}`}
+                {quantity}
               </span>
             </div>
             

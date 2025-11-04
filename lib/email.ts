@@ -132,8 +132,7 @@ ${data.shippingAddress.country}
       <h3 style="color: #16a34a; font-size: 16px; margin: 0 0 10px 0;">What's Next?</h3>
       <ul style="color: #333; font-size: 14px; margin: 0; padding-left: 20px;">
         <li style="margin-bottom: 8px;">You'll receive an email when your order ships</li>
-        <li style="margin-bottom: 8px;">Track your order status at any time</li>
-        <li style="margin-bottom: 0;">Expected release: Check your confirmation page for details</li>
+        <li style="margin-bottom: 0;">Track your order status at any time</li>
       </ul>
     </div>
 
@@ -174,7 +173,6 @@ ${data.taxAmount > 0 ? `Tax: ${formatCurrency(data.taxAmount)}\n` : ''}${data.sh
 WHAT'S NEXT?
 - You'll receive an email when your order ships
 - Track your order status at any time
-- Expected release: Check your confirmation page for details
 
 If you have any questions, please contact us at ${fromEmail}
 
@@ -245,14 +243,14 @@ ${data.shippingAddress.country}
   <div style="background-color: #ffffff; border-radius: 8px; padding: 40px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
     
     <!-- Header -->
-    <div style="text-align: center; margin-bottom: 30px; border-bottom: 2px solid #dc2626; padding-bottom: 20px;">
-      <h1 style="color: #dc2626; margin: 0; font-size: 28px; font-weight: bold;">🔔 New Order Received</h1>
+    <div style="text-align: center; margin-bottom: 30px; border-bottom: 2px solid #16a34a; padding-bottom: 20px;">
+      <h1 style="color: #16a34a; margin: 0; font-size: 28px; font-weight: bold;">🔔 New Order Received</h1>
       <p style="color: #666; margin: 5px 0 0 0; font-size: 14px;">Waiting to Fly - Order Notification</p>
     </div>
 
     <!-- Alert Message -->
-    <div style="background-color: #fef2f2; border-left: 4px solid #dc2626; border-radius: 4px; padding: 15px; margin-bottom: 30px;">
-      <p style="color: #dc2626; margin: 0; font-size: 16px; font-weight: bold;">A new order has been placed and payment has been confirmed.</p>
+    <div style="background-color: #ecfdf5; border-left: 4px solid #16a34a; border-radius: 4px; padding: 15px; margin-bottom: 30px;">
+      <p style="color: #16a34a; margin: 0; font-size: 16px; font-weight: bold;">A new order has been placed and payment has been confirmed.</p>
     </div>
 
     <!-- Customer Information -->
@@ -333,7 +331,7 @@ ${data.shippingAddress.country}
       
       <div style="display: flex; justify-content: space-between; margin-top: 15px; padding-top: 15px; border-top: 2px solid #e5e7eb;">
         <strong style="color: #333; font-size: 16px;">Total:</strong>
-        <strong style="color: #dc2626; font-size: 18px;">${formatCurrency(data.totalAmount)}</strong>
+        <strong style="color: #16a34a; font-size: 18px;">${formatCurrency(data.totalAmount)}</strong>
       </div>
     </div>
 
