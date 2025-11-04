@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
 import { createClient } from '@/lib/supabase/server';
+import { sendOrderConfirmationEmail } from '@/lib/email';
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
@@ -77,6 +78,48 @@ export async function POST(request: NextRequest) {
             total: totalAmount,
             tax_rate: `${(taxRate * 100).toFixed(2)}%`,
           });
+
+          // Fetch the complete order details for email
+          const { data: order, error: orderFetchError } = await supabase
+            .from('orders')
+            .select('*')
+            .eq('checkout_session_id', session.id)
+            .single();
+
+          if (!orderFetchError && order) {
+            // Calculate shipping amount (total - subtotal - tax)
+            const calculatedShipping = totalAmount - subtotalAmount - taxAmount;
+            
+            // Send order confirmation email
+            try {
+              await sendOrderConfirmationEmail({
+                to: order.email,
+                customerName: order.name,
+                orderId: order.id,
+                bookTitle: order.book_title || 'Waiting to Fly',
+                bookFormat: order.book_format,
+                quantity: order.quantity || 1,
+                subtotal: subtotalAmount,
+                taxAmount: taxAmount,
+                shippingAmount: calculatedShipping,
+                totalAmount: totalAmount,
+                shippingAddress: {
+                  firstName: order.shipping_first_name,
+                  lastName: order.shipping_last_name,
+                  addressLine1: order.shipping_address_line1,
+                  addressLine2: order.shipping_address_line2 || undefined,
+                  city: order.shipping_city,
+                  state: order.shipping_state || undefined,
+                  postalCode: order.shipping_postal_code,
+                  country: order.shipping_country || 'US',
+                },
+                checkoutSessionId: session.id,
+              });
+            } catch (emailError) {
+              // Log email error but don't fail the webhook
+              console.error('Failed to send order confirmation email:', emailError);
+            }
+          }
         }
         break;
       }
