@@ -358,21 +358,104 @@ export async function POST(request: NextRequest) {
           updateData.amount = paymentIntent.amount / 100; // Total amount including tax
         }
         
-        const { error } = await supabase
+        // Try to find the order first
+        let order = null;
+        
+        // First, try to find by payment_intent_id
+        const { data: foundOrder, error: fetchError } = await supabase
           .from('orders')
-          .update(updateData)
-          .eq('payment_intent_id', paymentIntent.id);
+          .select('*')
+          .eq('payment_intent_id', paymentIntent.id)
+          .single();
 
-        if (error) {
-          console.error('Failed to update order:', error);
+        if (!fetchError && foundOrder) {
+          order = foundOrder;
+          console.log('✅ Found order by payment_intent_id:', order.id);
         } else {
-          console.log('✅ Payment Intent succeeded - Order updated:', {
-            payment_intent_id: paymentIntent.id,
+          console.error('❌ Failed to find order by payment_intent_id:', fetchError);
+        }
+
+        // Update the order if we found it
+        if (order) {
+          const { error: updateError } = await supabase
+            .from('orders')
+            .update(updateData)
+            .eq('id', order.id);
+
+          if (updateError) {
+            console.error('❌ Failed to update order:', updateError);
+          } else {
+            console.log('✅ Payment Intent succeeded - Order updated:', {
+              order_id: order.id,
+              payment_intent_id: paymentIntent.id,
+              subtotal: subtotalAmount,
+              tax_amount: taxAmount,
+              total: paymentIntent.amount / 100,
+              tax_rate: `${(taxRate * 100).toFixed(2)}%`,
+            });
+          }
+        } else {
+          console.error('❌ Cannot update order - order not found. Payment Intent ID:', paymentIntent.id);
+        }
+
+        // Send emails if we have the order data
+        if (order) {
+          // Calculate shipping amount (total - subtotal - tax)
+          const totalAmount = paymentIntent.amount / 100;
+          const calculatedShipping = totalAmount - subtotalAmount - taxAmount;
+          
+          // Prepare order email data
+          const orderEmailData = {
+            to: order.email,
+            customerName: order.name,
+            orderId: order.id,
+            bookTitle: order.book_title || 'Waiting to Fly',
+            bookFormat: order.book_format,
+            quantity: order.quantity || 1,
             subtotal: subtotalAmount,
-            tax_amount: taxAmount,
-            total: paymentIntent.amount / 100,
-            tax_rate: `${(taxRate * 100).toFixed(2)}%`,
-          });
+            taxAmount: taxAmount,
+            shippingAmount: calculatedShipping,
+            totalAmount: totalAmount,
+            shippingAddress: {
+              firstName: order.shipping_first_name,
+              lastName: order.shipping_last_name,
+              addressLine1: order.shipping_address_line1,
+              addressLine2: order.shipping_address_line2 || undefined,
+              city: order.shipping_city,
+              state: order.shipping_state || undefined,
+              postalCode: order.shipping_postal_code,
+              country: order.shipping_country || 'US',
+            },
+            checkoutSessionId: order.checkout_session_id || undefined,
+          };
+
+          // Send order confirmation email to customer
+          console.log('📧 Attempting to send customer confirmation email to:', orderEmailData.to);
+          try {
+            const customerEmailResult = await sendOrderConfirmationEmail(orderEmailData);
+            if (customerEmailResult.success) {
+              console.log('✅ Customer confirmation email sent successfully');
+            } else {
+              console.error('❌ Customer confirmation email failed:', customerEmailResult.error);
+            }
+          } catch (emailError) {
+            console.error('❌ Exception sending customer confirmation email:', emailError);
+          }
+
+          // Send admin notification email
+          console.log('📧 Attempting to send admin notification email');
+          try {
+            const adminEmailResult = await sendAdminOrderNotificationEmail(orderEmailData);
+            if (adminEmailResult.success) {
+              console.log('✅ Admin notification email sent successfully');
+            } else {
+              console.error('❌ Admin notification email failed:', adminEmailResult.error);
+            }
+          } catch (adminEmailError) {
+            console.error('❌ Exception sending admin notification email:', adminEmailError);
+          }
+        } else {
+          console.error('❌ Cannot send emails - order data not available. Payment Intent ID:', paymentIntent.id);
         }
 
         console.log('Payment succeeded:', paymentIntent.id);
