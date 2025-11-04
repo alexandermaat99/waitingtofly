@@ -41,16 +41,21 @@ RESEND_FROM_EMAIL=orders@yourdomain.com
 
 # Email "From" name (optional - defaults to "Waiting to Fly")
 RESEND_FROM_NAME=Waiting to Fly
+
+# Admin email for order notifications (optional)
+# When an order is placed, an admin notification email will be sent to this address
+ADMIN_EMAIL=admin@yourdomain.com
 ```
 
 ### 5. Deploy to Vercel
 
 1. Go to your Vercel project settings
 2. Navigate to **Environment Variables**
-3. Add the three variables above:
-   - `RESEND_API_KEY`
+3. Add the four variables above:
+   - `RESEND_API_KEY` (required)
    - `RESEND_FROM_EMAIL` (optional)
    - `RESEND_FROM_NAME` (optional)
+   - `ADMIN_EMAIL` (optional - for order notifications)
 4. Redeploy your application
 
 ## Testing
@@ -58,16 +63,31 @@ RESEND_FROM_NAME=Waiting to Fly
 1. Make a test order in **live mode** (not test mode)
 2. Complete the checkout process
 3. Check the customer's email inbox for the confirmation email
-4. Check Vercel logs for email sending status
+4. Check the admin email inbox (if `ADMIN_EMAIL` is set) for the order notification
+5. Check Vercel logs for email sending status
 
-## Email Template
+## Email Templates
 
-The order confirmation email includes:
+### Customer Order Confirmation Email
+
+The order confirmation email sent to customers includes:
 - Order details (ID, book, format, quantity)
 - Shipping address
 - Order summary (subtotal, tax, shipping, total)
 - Next steps information
 - Branded design matching your website
+
+### Admin Order Notification Email
+
+When an order is placed, an admin notification email is automatically sent to the `ADMIN_EMAIL` address (if configured). This email includes:
+- Customer information (name, email)
+- Order ID and checkout session ID
+- Order details (book, format, quantity)
+- Shipping address
+- Order summary (subtotal, tax, shipping, total)
+- Formatted for easy review and action
+
+**Note:** If `ADMIN_EMAIL` is not set, admin notifications will be skipped (this won't affect customer emails).
 
 ## Troubleshooting
 
@@ -86,9 +106,10 @@ The order confirmation email includes:
 
 ## Customization
 
-To customize the email template, edit:
+To customize the email templates, edit:
 - `lib/email.ts` - Email HTML/text templates
 - Email includes your brand colors and styling
-- Modify the `sendOrderConfirmationEmail` function to add/change content
+- Modify the `sendOrderConfirmationEmail` function to customize customer emails
+- Modify the `sendAdminOrderNotificationEmail` function to customize admin notifications
 
 
