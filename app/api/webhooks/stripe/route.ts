@@ -62,74 +62,224 @@ export async function POST(request: NextRequest) {
             : session.payment_intent.id;
         }
         
-        const { error } = await supabase
+        // Try multiple ways to find the order
+        let order = null;
+        let orderFetchError = null;
+        
+        // First, try to find by checkout_session_id (most reliable)
+        let { data: foundOrder, error: fetchError } = await supabase
           .from('orders')
-          .update(updateData)
-          .eq('checkout_session_id', session.id);
+          .select('*')
+          .eq('checkout_session_id', session.id)
+          .single();
 
-        if (error) {
-          console.error('Failed to update order:', error);
+        if (!fetchError && foundOrder) {
+          order = foundOrder;
+          console.log('✅ Found order by checkout_session_id:', order.id);
         } else {
-          console.log('✅ Order updated with Stripe Tax amounts:', {
-            order_id: session.metadata?.order_id,
-            checkout_session_id: session.id,
-            subtotal: subtotalAmount,
-            tax_amount: taxAmount,
-            total: totalAmount,
-            tax_rate: `${(taxRate * 100).toFixed(2)}%`,
-          });
-
-          // Fetch the complete order details for email
-          const { data: order, error: orderFetchError } = await supabase
-            .from('orders')
-            .select('*')
-            .eq('checkout_session_id', session.id)
-            .single();
-
-          if (!orderFetchError && order) {
-            // Calculate shipping amount (total - subtotal - tax)
-            const calculatedShipping = totalAmount - subtotalAmount - taxAmount;
+          // If not found, try by order_id from metadata
+          if (session.metadata?.order_id) {
+            console.log('⚠️ Order not found by checkout_session_id, trying order_id from metadata:', session.metadata.order_id);
+            const { data: foundOrderByMetadata, error: metadataError } = await supabase
+              .from('orders')
+              .select('*')
+              .eq('id', session.metadata.order_id)
+              .single();
             
-            // Prepare order email data
+            if (!metadataError && foundOrderByMetadata) {
+              order = foundOrderByMetadata;
+              console.log('✅ Found order by order_id from metadata:', order.id);
+            } else {
+              console.error('❌ Failed to find order by order_id:', metadataError);
+              orderFetchError = metadataError;
+            }
+          } else {
+            // Last resort: try by payment_intent_id
+            if (session.payment_intent) {
+              const paymentIntentId = typeof session.payment_intent === 'string' 
+                ? session.payment_intent 
+                : session.payment_intent.id;
+              
+              console.log('⚠️ Order not found by checkout_session_id, trying payment_intent_id:', paymentIntentId);
+              const { data: foundOrderByPaymentIntent, error: paymentIntentError } = await supabase
+                .from('orders')
+                .select('*')
+                .eq('payment_intent_id', paymentIntentId)
+                .single();
+              
+              if (!paymentIntentError && foundOrderByPaymentIntent) {
+                order = foundOrderByPaymentIntent;
+                console.log('✅ Found order by payment_intent_id:', order.id);
+              } else {
+                console.error('❌ Failed to find order by payment_intent_id:', paymentIntentError);
+                orderFetchError = paymentIntentError;
+              }
+            } else {
+              console.error('❌ Failed to find order - no checkout_session_id match and no order_id in metadata');
+              orderFetchError = fetchError;
+            }
+          }
+        }
+
+        // Update the order if we found it
+        if (order) {
+          const { error: updateError } = await supabase
+            .from('orders')
+            .update(updateData)
+            .eq('id', order.id);
+
+          if (updateError) {
+            console.error('❌ Failed to update order:', updateError);
+          } else {
+            console.log('✅ Order updated with Stripe Tax amounts:', {
+              order_id: order.id,
+              checkout_session_id: session.id,
+              subtotal: subtotalAmount,
+              tax_amount: taxAmount,
+              total: totalAmount,
+              tax_rate: `${(taxRate * 100).toFixed(2)}%`,
+            });
+          }
+        } else {
+          console.error('❌ Cannot update order - order not found. Session ID:', session.id, 'Metadata:', session.metadata);
+        }
+
+        // Send emails - use order data if available, otherwise fallback to Stripe session data
+        if (order) {
+          // Calculate shipping amount (total - subtotal - tax)
+          const calculatedShipping = totalAmount - subtotalAmount - taxAmount;
+          
+          // Prepare order email data
+          const orderEmailData = {
+            to: order.email,
+            customerName: order.name,
+            orderId: order.id,
+            bookTitle: order.book_title || 'Waiting to Fly',
+            bookFormat: order.book_format,
+            quantity: order.quantity || 1,
+            subtotal: subtotalAmount,
+            taxAmount: taxAmount,
+            shippingAmount: calculatedShipping,
+            totalAmount: totalAmount,
+            shippingAddress: {
+              firstName: order.shipping_first_name,
+              lastName: order.shipping_last_name,
+              addressLine1: order.shipping_address_line1,
+              addressLine2: order.shipping_address_line2 || undefined,
+              city: order.shipping_city,
+              state: order.shipping_state || undefined,
+              postalCode: order.shipping_postal_code,
+              country: order.shipping_country || 'US',
+            },
+            checkoutSessionId: session.id,
+          };
+
+          // Send order confirmation email to customer
+          console.log('📧 Attempting to send customer confirmation email to:', orderEmailData.to);
+          try {
+            const customerEmailResult = await sendOrderConfirmationEmail(orderEmailData);
+            if (customerEmailResult.success) {
+              console.log('✅ Customer confirmation email sent successfully');
+            } else {
+              console.error('❌ Customer confirmation email failed:', customerEmailResult.error);
+            }
+          } catch (emailError) {
+            // Log email error but don't fail the webhook
+            console.error('❌ Exception sending customer confirmation email:', emailError);
+          }
+
+          // Send admin notification email
+          console.log('📧 Attempting to send admin notification email');
+          try {
+            const adminEmailResult = await sendAdminOrderNotificationEmail(orderEmailData);
+            if (adminEmailResult.success) {
+              console.log('✅ Admin notification email sent successfully');
+            } else {
+              console.error('❌ Admin notification email failed:', adminEmailResult.error);
+            }
+          } catch (adminEmailError) {
+            // Log admin email error but don't fail the webhook
+            console.error('❌ Exception sending admin notification email:', adminEmailError);
+          }
+        } else {
+          // Fallback: Try to send emails using Stripe session data directly
+          console.log('⚠️ Order not found in database, attempting to send emails using Stripe session data');
+          const customerEmail = session.customer_email || session.customer_details?.email;
+          const customerName = session.customer_details?.name || 'Customer';
+          const shippingDetails = session.shipping_details;
+          
+          if (customerEmail) {
+            // Try to extract order info from metadata
+            const bookFormat = session.metadata?.book_format || 'Unknown';
+            const quantity = parseInt(session.metadata?.quantity || '1', 10);
+            const bookTitle = session.metadata?.book_title || 'Waiting to Fly';
+            const orderIdFromMetadata = session.metadata?.order_id || session.id;
+            
+            // Extract shipping address from Stripe session
+            const shippingAddress = shippingDetails?.address 
+              ? {
+                  firstName: shippingDetails.name?.split(' ')[0] || customerName.split(' ')[0] || '',
+                  lastName: shippingDetails.name?.split(' ').slice(1).join(' ') || customerName.split(' ').slice(1).join(' ') || '',
+                  addressLine1: shippingDetails.address.line1 || '',
+                  addressLine2: shippingDetails.address.line2 || undefined,
+                  city: shippingDetails.address.city || '',
+                  state: shippingDetails.address.state || undefined,
+                  postalCode: shippingDetails.address.postal_code || '',
+                  country: shippingDetails.address.country || 'US',
+                }
+              : {
+                  firstName: customerName.split(' ')[0] || '',
+                  lastName: customerName.split(' ').slice(1).join(' ') || '',
+                  addressLine1: 'Address not available',
+                  addressLine2: undefined,
+                  city: '',
+                  state: undefined,
+                  postalCode: '',
+                  country: 'US',
+                };
+            
             const orderEmailData = {
-              to: order.email,
-              customerName: order.name,
-              orderId: order.id,
-              bookTitle: order.book_title || 'Waiting to Fly',
-              bookFormat: order.book_format,
-              quantity: order.quantity || 1,
+              to: customerEmail,
+              customerName: customerName,
+              orderId: orderIdFromMetadata,
+              bookTitle: bookTitle,
+              bookFormat: bookFormat,
+              quantity: quantity,
               subtotal: subtotalAmount,
               taxAmount: taxAmount,
-              shippingAmount: calculatedShipping,
+              shippingAmount: totalAmount - subtotalAmount - taxAmount,
               totalAmount: totalAmount,
-              shippingAddress: {
-                firstName: order.shipping_first_name,
-                lastName: order.shipping_last_name,
-                addressLine1: order.shipping_address_line1,
-                addressLine2: order.shipping_address_line2 || undefined,
-                city: order.shipping_city,
-                state: order.shipping_state || undefined,
-                postalCode: order.shipping_postal_code,
-                country: order.shipping_country || 'US',
-              },
+              shippingAddress: shippingAddress,
               checkoutSessionId: session.id,
             };
 
             // Send order confirmation email to customer
+            console.log('📧 Attempting to send customer confirmation email using Stripe session data to:', customerEmail);
             try {
-              await sendOrderConfirmationEmail(orderEmailData);
+              const customerEmailResult = await sendOrderConfirmationEmail(orderEmailData);
+              if (customerEmailResult.success) {
+                console.log('✅ Customer confirmation email sent successfully (using Stripe session data)');
+              } else {
+                console.error('❌ Customer confirmation email failed:', customerEmailResult.error);
+              }
             } catch (emailError) {
-              // Log email error but don't fail the webhook
-              console.error('Failed to send order confirmation email:', emailError);
+              console.error('❌ Exception sending customer confirmation email:', emailError);
             }
 
             // Send admin notification email
+            console.log('📧 Attempting to send admin notification email using Stripe session data');
             try {
-              await sendAdminOrderNotificationEmail(orderEmailData);
+              const adminEmailResult = await sendAdminOrderNotificationEmail(orderEmailData);
+              if (adminEmailResult.success) {
+                console.log('✅ Admin notification email sent successfully (using Stripe session data)');
+              } else {
+                console.error('❌ Admin notification email failed:', adminEmailResult.error);
+              }
             } catch (adminEmailError) {
-              // Log admin email error but don't fail the webhook
-              console.error('Failed to send admin order notification email:', adminEmailError);
+              console.error('❌ Exception sending admin notification email:', adminEmailError);
             }
+          } else {
+            console.error('❌ Cannot send emails - no customer email available in Stripe session. Session ID:', session.id);
           }
         }
         break;
