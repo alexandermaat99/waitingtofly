@@ -72,27 +72,26 @@ ${data.shippingAddress.country}
     <div style="background-color: #f9fafb; border-radius: 6px; padding: 20px; margin-bottom: 30px;">
       <h3 style="color: #333; font-size: 18px; margin: 0 0 15px 0; border-bottom: 1px solid #e5e7eb; padding-bottom: 10px;">Order Details</h3>
       
-      <div style="margin-bottom: 15px;">
+<div style="margin-bottom: 15px;">
         <strong style="color: #666; font-size: 14px;">Order ID:</strong>
         <span style="color: #333; font-size: 14px; margin-left: 10px;">${data.orderId}</span>
       </div>
       
-      <div style="margin-bottom: 15px;">
+<div style="margin-bottom: 15px;">
         <strong style="color: #666; font-size: 14px;">Book:</strong>
         <span style="color: #333; font-size: 14px; margin-left: 10px;">${data.bookTitle}</span>
       </div>
       
-      <div style="margin-bottom: 15px;">
+<div style="margin-bottom: 15px;">
         <strong style="color: #666; font-size: 14px;">Format:</strong>
         <span style="color: #333; font-size: 14px; margin-left: 10px;">${data.bookFormat}</span>
       </div>
       
-      ${data.quantity > 1 ? `
       <div style="margin-bottom: 15px;">
         <strong style="color: #666; font-size: 14px;">Quantity:</strong>
         <span style="color: #333; font-size: 14px; margin-left: 10px;">${data.quantity}</span>
       </div>
-      ` : ''}
+
     </div>
 
     <!-- Shipping Address -->
@@ -115,14 +114,14 @@ ${data.shippingAddress.country}
         <span style="color: #666; font-size: 14px;">Tax:</span>
         <span style="color: #333; font-size: 14px;">${formatCurrency(data.taxAmount)}</span>
       </div>
-      ` : ''}
+
       
       ${data.shippingAmount > 0 ? `
       <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
         <span style="color: #666; font-size: 14px;">Shipping:</span>
         <span style="color: #333; font-size: 14px;">${formatCurrency(data.shippingAmount)}</span>
       </div>
-      ` : ''}
+
       
       <div style="display: flex; justify-content: space-between; margin-top: 15px; padding-top: 15px; border-top: 2px solid #e5e7eb;">
         <strong style="color: #333; font-size: 16px;">Total:</strong>
@@ -165,7 +164,7 @@ ORDER DETAILS
 Order ID: ${data.orderId}
 Book: ${data.bookTitle}
 Format: ${data.bookFormat}
-${data.quantity > 1 ? `Quantity: ${data.quantity}\n` : ''}
+Quantity: ${data.quantity}
 
 SHIPPING ADDRESS
 ${shippingAddressText}
@@ -262,17 +261,17 @@ ${data.shippingAddress.country}
     <div style="background-color: #f9fafb; border-radius: 6px; padding: 20px; margin-bottom: 30px;">
       <h3 style="color: #333; font-size: 18px; margin: 0 0 15px 0; border-bottom: 1px solid #e5e7eb; padding-bottom: 10px;">Customer Information</h3>
       
-      <div style="margin-bottom: 15px;">
+<div style="margin-bottom: 15px;">
         <strong style="color: #666; font-size: 14px;">Name:</strong>
         <span style="color: #333; font-size: 14px; margin-left: 10px;">${data.customerName}</span>
       </div>
       
-      <div style="margin-bottom: 15px;">
+<div style="margin-bottom: 15px;">
         <strong style="color: #666; font-size: 14px;">Email:</strong>
         <span style="color: #333; font-size: 14px; margin-left: 10px;">${data.to}</span>
       </div>
       
-      <div style="margin-bottom: 15px;">
+<div style="margin-bottom: 15px;">
         <strong style="color: #666; font-size: 14px;">Order ID:</strong>
         <span style="color: #333; font-size: 14px; margin-left: 10px; font-family: monospace;">${data.orderId}</span>
       </div>
@@ -282,29 +281,28 @@ ${data.shippingAddress.country}
         <strong style="color: #666; font-size: 14px;">Checkout Session ID:</strong>
         <span style="color: #333; font-size: 14px; margin-left: 10px; font-family: monospace; word-break: break-all;">${data.checkoutSessionId}</span>
       </div>
-      ` : ''}
+
     </div>
 
     <!-- Order Details -->
     <div style="background-color: #f9fafb; border-radius: 6px; padding: 20px; margin-bottom: 30px;">
       <h3 style="color: #333; font-size: 18px; margin: 0 0 15px 0; border-bottom: 1px solid #e5e7eb; padding-bottom: 10px;">Order Details</h3>
       
-      <div style="margin-bottom: 15px;">
+<div style="margin-bottom: 15px;">
         <strong style="color: #666; font-size: 14px;">Book:</strong>
         <span style="color: #333; font-size: 14px; margin-left: 10px;">${data.bookTitle}</span>
       </div>
       
-      <div style="margin-bottom: 15px;">
+<div style="margin-bottom: 15px;">
         <strong style="color: #666; font-size: 14px;">Format:</strong>
         <span style="color: #333; font-size: 14px; margin-left: 10px;">${data.bookFormat}</span>
       </div>
       
-      ${data.quantity > 1 ? `
       <div style="margin-bottom: 15px;">
         <strong style="color: #666; font-size: 14px;">Quantity:</strong>
         <span style="color: #333; font-size: 14px; margin-left: 10px;">${data.quantity}</span>
       </div>
-      ` : ''}
+
     </div>
 
     <!-- Shipping Address -->
@@ -327,14 +325,14 @@ ${data.shippingAddress.country}
         <span style="color: #666; font-size: 14px;">Tax:</span>
         <span style="color: #333; font-size: 14px;">${formatCurrency(data.taxAmount)}</span>
       </div>
-      ` : ''}
+
       
       ${data.shippingAmount > 0 ? `
       <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
         <span style="color: #666; font-size: 14px;">Shipping:</span>
         <span style="color: #333; font-size: 14px;">${formatCurrency(data.shippingAmount)}</span>
       </div>
-      ` : ''}
+
       
       <div style="display: flex; justify-content: space-between; margin-top: 15px; padding-top: 15px; border-top: 2px solid #e5e7eb;">
         <strong style="color: #333; font-size: 16px;">Total:</strong>
@@ -370,7 +368,7 @@ ${data.checkoutSessionId ? `Checkout Session ID: ${data.checkoutSessionId}\n` : 
 ORDER DETAILS
 Book: ${data.bookTitle}
 Format: ${data.bookFormat}
-${data.quantity > 1 ? `Quantity: ${data.quantity}\n` : ''}
+<div style="margin-bottom: 15px;"><strong style="color: #666; font-size: 14px;">Quantity:</strong><span style="color: #333; font-size: 14px; margin-left: 10px;">${data.quantity}</span></div>Quantity: ${data.quantity}\n` : ''}
 
 SHIPPING ADDRESS
 ${shippingAddressText}

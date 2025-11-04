@@ -296,53 +296,65 @@ export async function POST(request: NextRequest) {
           expand: ['latest_charge', 'charges'],
         });
         
-        // Try to get tax information from metadata or calculate from amount
-        // If tax calculation was linked, the amount includes tax
+        // Get the full order record first - it has all the correct values
+        // The order was saved with subtotal, tax_amount, and amount when created
+        let order = null;
+        const { data: foundOrder, error: fetchError } = await supabase
+          .from('orders')
+          .select('*')
+          .eq('payment_intent_id', paymentIntent.id)
+          .single();
+
+        if (!fetchError && foundOrder) {
+          order = foundOrder;
+          console.log('✅ Found order by payment_intent_id:', order.id);
+        } else {
+          console.error('❌ Failed to find order by payment_intent_id:', fetchError);
+        }
+
+        // Use values from the order record - these are the source of truth
+        // The order was saved with correct subtotal and tax_amount when created
         let taxAmount = 0;
         let subtotalAmount = 0;
         let taxRate = 0;
+        let totalAmount = paymentIntent.amount / 100;
         
-        // First, get the existing order to see what we already have
-        const existingOrder = await supabase
-          .from('orders')
-          .select('subtotal, tax_amount, shipping_price')
-          .eq('payment_intent_id', paymentIntent.id)
-          .single();
-        
-        // Check if we have tax_calculation_id in metadata and need to retrieve tax details
-        const taxCalculationId = paymentIntent.metadata?.tax_calculation_id;
-        
-        if (taxCalculationId && existingOrder.data) {
-          try {
-            // Retrieve the tax calculation to get tax details
-            const taxCalculation = await stripe.tax.calculations.retrieve(taxCalculationId);
-            taxAmount = (taxCalculation.tax_amount_exclusive || 0) / 100; // Convert from cents
-            
-            // Use the stored subtotal from the order (product only, doesn't include shipping)
-            // The tax calculation includes tax on both product and shipping
-            subtotalAmount = existingOrder.data.subtotal || 0;
-            taxRate = subtotalAmount > 0 ? (taxAmount / subtotalAmount) : 0;
-            
-            console.log('✅ Tax information from tax calculation:', {
-              calculation_id: taxCalculationId,
-              tax_amount: taxAmount,
-              subtotal: subtotalAmount,
-              tax_rate: `${(taxRate * 100).toFixed(2)}%`,
-            });
-          } catch (taxError) {
-            console.warn('Could not retrieve tax calculation, using stored values:', taxError);
-            // Use stored values from order
-            if (existingOrder.data) {
-              subtotalAmount = existingOrder.data.subtotal || 0;
-              taxAmount = existingOrder.data.tax_amount || 0;
+        if (order) {
+          // Use the values stored in the order (they were calculated correctly when order was created)
+          subtotalAmount = order.subtotal || 0;
+          taxAmount = order.tax_amount || 0;
+          taxRate = order.tax_rate || 0;
+          totalAmount = order.amount || totalAmount; // Use order amount if available, otherwise use payment intent amount
+          
+          console.log('✅ Using values from order record:', {
+            subtotal: subtotalAmount,
+            tax_amount: taxAmount,
+            tax_rate: `${(taxRate * 100).toFixed(2)}%`,
+            total: totalAmount,
+          });
+        } else {
+          // Fallback: Try to get from payment intent metadata or calculate
+          // Check if we have tax_calculation_id in metadata
+          const taxCalculationId = paymentIntent.metadata?.tax_calculation_id;
+          
+          if (taxCalculationId) {
+            try {
+              const taxCalculation = await stripe.tax.calculations.retrieve(taxCalculationId);
+              taxAmount = (taxCalculation.tax_amount_exclusive || 0) / 100;
+              
+              // Try to get subtotal from metadata or calculate from total
+              subtotalAmount = totalAmount - taxAmount; // Rough estimate
               taxRate = subtotalAmount > 0 ? (taxAmount / subtotalAmount) : 0;
+              
+              console.log('⚠️ Using tax calculation fallback:', {
+                calculation_id: taxCalculationId,
+                tax_amount: taxAmount,
+                subtotal: subtotalAmount,
+              });
+            } catch (taxError) {
+              console.warn('Could not retrieve tax calculation:', taxError);
             }
           }
-        } else if (existingOrder.data) {
-          // No tax calculation linked or already have stored values, use what's in the order
-          subtotalAmount = existingOrder.data.subtotal || 0;
-          taxAmount = existingOrder.data.tax_amount || 0;
-          taxRate = subtotalAmount > 0 ? (taxAmount / subtotalAmount) : 0;
         }
         
         const updateData: any = {
@@ -358,22 +370,7 @@ export async function POST(request: NextRequest) {
           updateData.amount = paymentIntent.amount / 100; // Total amount including tax
         }
         
-        // Try to find the order first
-        let order = null;
-        
-        // First, try to find by payment_intent_id
-        const { data: foundOrder, error: fetchError } = await supabase
-          .from('orders')
-          .select('*')
-          .eq('payment_intent_id', paymentIntent.id)
-          .single();
-
-        if (!fetchError && foundOrder) {
-          order = foundOrder;
-          console.log('✅ Found order by payment_intent_id:', order.id);
-        } else {
-          console.error('❌ Failed to find order by payment_intent_id:', fetchError);
-        }
+        // Order was already fetched above to get tax/subtotal values
 
         // Update the order if we found it
         if (order) {
@@ -400,9 +397,21 @@ export async function POST(request: NextRequest) {
 
         // Send emails if we have the order data
         if (order) {
-          // Calculate shipping amount (total - subtotal - tax)
-          const totalAmount = paymentIntent.amount / 100;
-          const calculatedShipping = totalAmount - subtotalAmount - taxAmount;
+          // Shipping should be 0 if it wasn't charged
+          // Calculate shipping as: total - subtotal - tax
+          // But if subtotal + tax already equals total, shipping is 0
+          const calculatedShipping = Math.max(0, totalAmount - subtotalAmount - taxAmount);
+          
+          // For test format or digital products, shipping should always be 0
+          const isDigital = ['ebook', 'audiobook'].includes(order.book_format);
+          const shippingAmount = (isDigital || calculatedShipping < 0.01) ? 0 : calculatedShipping;
+          
+          console.log('📦 Shipping calculation:', {
+            calculatedShipping,
+            isDigital,
+            bookFormat: order.book_format,
+            finalShippingAmount: shippingAmount,
+          });
           
           // Prepare order email data
           const orderEmailData = {
@@ -414,7 +423,7 @@ export async function POST(request: NextRequest) {
             quantity: order.quantity || 1,
             subtotal: subtotalAmount,
             taxAmount: taxAmount,
-            shippingAmount: calculatedShipping,
+            shippingAmount: shippingAmount,
             totalAmount: totalAmount,
             shippingAddress: {
               firstName: order.shipping_first_name,
