@@ -12,6 +12,7 @@ export async function POST(request: NextRequest) {
       name, 
       bookFormat,
       quantity = 1,
+      signingNames = [],
       shippingFirstName,
       shippingLastName,
       shippingAddressLine1,
@@ -466,6 +467,7 @@ export async function POST(request: NextRequest) {
         name,
         book_format: bookFormat, // Format has been validated above
         quantity: quantity || 1,
+        signing_names: Array.isArray(signingNames) && signingNames.length > 0 ? signingNames : null,
         amount: finalTotal, // Use total with tax (manual tax calculation)
         payment_intent_id: paymentIntent.id,
         status: 'pending',

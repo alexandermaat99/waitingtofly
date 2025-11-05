@@ -53,7 +53,7 @@ function PaymentForm({ clientSecret, setClientSecret }: PaymentFormInternalProps
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [checkoutStep, setCheckoutStep] = useState<'order' | 'shipping' | 'payment'>('order');
+  const [checkoutStep, setCheckoutStep] = useState<'order' | 'signing' | 'shipping' | 'payment'>('order');
   const [fieldErrors, setFieldErrors] = useState<Record<string, boolean>>({});
 
   // Data from database
@@ -77,6 +77,30 @@ function PaymentForm({ clientSecret, setClientSecret }: PaymentFormInternalProps
   const [quantity, setQuantity] = useState(() => getStoredState('quantity', 1));
   const [quantityInput, setQuantityInput] = useState(() => String(getStoredState('quantity', 1)));
 
+  // Signing names state - array of names for each book
+  const [signingNames, setSigningNames] = useState<string[]>(() => {
+    const stored = getStoredState('signingNames', []);
+    return Array.isArray(stored) ? stored : [];
+  });
+
+  // Sync signing names array with quantity
+  useEffect(() => {
+    if (quantity > 0) {
+      setSigningNames(prev => {
+        const newArray = [...prev];
+        // Expand array if quantity increased
+        while (newArray.length < quantity) {
+          newArray.push('');
+        }
+        // Shrink array if quantity decreased
+        if (newArray.length > quantity) {
+          newArray.length = quantity;
+        }
+        return newArray;
+      });
+    }
+  }, [quantity]);
+
   // Save form state to localStorage whenever it changes
   useEffect(() => {
     const formData = {
@@ -84,6 +108,7 @@ function PaymentForm({ clientSecret, setClientSecret }: PaymentFormInternalProps
       name,
       bookFormat,
       quantity,
+      signingNames,
       shippingFirstName,
       shippingLastName,
       shippingAddressLine1,
@@ -103,6 +128,7 @@ function PaymentForm({ clientSecret, setClientSecret }: PaymentFormInternalProps
     name,
     bookFormat,
     quantity,
+    signingNames,
     shippingFirstName,
     shippingLastName,
     shippingAddressLine1,
@@ -319,14 +345,14 @@ function PaymentForm({ clientSecret, setClientSecret }: PaymentFormInternalProps
     }
   };
 
-  // Handle "Continue to Shipping" button (step order -> shipping)
-  const handleContinueToShipping = async (e?: React.FormEvent | React.MouseEvent) => {
+  // Handle "Continue to Signing" button (step order -> signing)
+  const handleContinueToSigning = async (e?: React.FormEvent | React.MouseEvent) => {
     if (e) {
       e.preventDefault();
       e.stopPropagation();
     }
     
-    console.log('✅ handleContinueToShipping called!');
+    console.log('✅ handleContinueToSigning called!');
     
     // Validate and normalize quantity
     const qtyValue = quantityInput.trim();
@@ -371,7 +397,23 @@ function PaymentForm({ clientSecret, setClientSecret }: PaymentFormInternalProps
       return;
     }
     
-    // Move to shipping step
+    // Move to signing step
+    setCheckoutStep('signing');
+    setError(null);
+    setFieldErrors({});
+  };
+
+  // Handle "Continue to Shipping" button (step signing -> shipping)
+  const handleContinueToShipping = async (e?: React.FormEvent | React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    
+    console.log('✅ handleContinueToShipping called!');
+    
+    // Signing names are optional, so no validation needed
+    // Just move to shipping step
     setCheckoutStep('shipping');
     setError(null);
     setFieldErrors({});
@@ -483,6 +525,7 @@ function PaymentForm({ clientSecret, setClientSecret }: PaymentFormInternalProps
         name: `${shippingFirstName.trim()} ${shippingLastName.trim()}`.trim() || name.trim(),
         bookFormat: bookFormat, // Already validated
         quantity: finalQuantity,
+        signingNames: signingNames.filter(name => name.trim()), // Only include non-empty names
         shippingFirstName: shippingFirstName.trim(),
         shippingLastName: shippingLastName.trim(),
         shippingAddressLine1: shippingAddressLine1.trim(),
@@ -995,7 +1038,7 @@ function PaymentForm({ clientSecret, setClientSecret }: PaymentFormInternalProps
                   
                   <button
                     type="button"
-                    onClick={handleContinueToShipping}
+                    onClick={handleContinueToSigning}
                     disabled={isProcessing || !bookFormat}
                     className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-4 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
@@ -1005,7 +1048,77 @@ function PaymentForm({ clientSecret, setClientSecret }: PaymentFormInternalProps
               )}
             </div>
 
-            {/* Section 2: Shipping Address */}
+            {/* Section 2: Signing */}
+            <div className="border rounded-lg">
+              <button
+                type="button"
+                onClick={() => checkoutStep !== 'order' && setCheckoutStep('signing')}
+                disabled={checkoutStep === 'order'}
+                className={`w-full flex items-center justify-between p-4 text-left ${
+                  checkoutStep === 'signing' ? 'bg-gray-50' : ''
+                } ${checkoutStep === 'order' ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+              >
+                <h5 className="font-semibold text-gray-900">
+                  2. Book Signing
+                  {checkoutStep !== 'order' && signingNames.some(name => name.trim()) && (
+                    <span className="text-sm font-normal text-gray-600 ml-2">
+                      - {signingNames.filter(name => name.trim()).length} name{signingNames.filter(name => name.trim()).length !== 1 ? 's' : ''} entered
+                    </span>
+                  )}
+                </h5>
+                {checkoutStep === 'signing' ? (
+                  <ChevronUp className="w-5 h-5 text-gray-600" />
+                ) : (
+                  <ChevronDown className="w-5 h-5 text-gray-400" />
+                )}
+              </button>
+              {checkoutStep === 'signing' && (
+                <div className="p-4 space-y-4 border-t">
+                  <div>
+                    <Label className="text-base font-medium text-gray-900 mb-2 block">
+                      Who should the book{quantity > 1 ? 's' : ''} be signed to?
+                    </Label>
+                    <p className="text-sm text-gray-600 mb-4">
+                      {quantity === 1 
+                        ? 'Enter the name to be signed in the book (optional)'
+                        : `Enter a name for each book you're ordering (optional)`
+                      }
+                    </p>
+                  </div>
+                  
+                  {signingNames.map((name, index) => (
+                    <div key={index}>
+                      <Label htmlFor={`signingName-${index}`}>
+                        Book {index + 1} {quantity > 1 && `of ${quantity}`}
+                      </Label>
+                      <Input
+                        id={`signingName-${index}`}
+                        type="text"
+                        value={name}
+                        onChange={(e) => {
+                          const newNames = [...signingNames];
+                          newNames[index] = e.target.value;
+                          setSigningNames(newNames);
+                        }}
+                        className="w-full"
+                        placeholder={`Enter name for book ${index + 1} (optional)`}
+                      />
+                    </div>
+                  ))}
+                  
+                  <button
+                    type="button"
+                    onClick={handleContinueToShipping}
+                    disabled={isProcessing}
+                    className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-4 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Continue
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Section 3: Shipping Address */}
             <div className="border rounded-lg">
               <button
                 type="button"
@@ -1016,7 +1129,7 @@ function PaymentForm({ clientSecret, setClientSecret }: PaymentFormInternalProps
                 } ${checkoutStep === 'order' ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
               >
                 <h5 className="font-semibold text-gray-900">
-                  2. Shipping Address
+                  3. Shipping Address
                   {checkoutStep !== 'order' && (shippingAddressLine1 || shippingCity) && (
                     <span className="text-sm font-normal text-gray-600 ml-2">
                       - {shippingCity || 'Entered'}
@@ -1252,7 +1365,7 @@ function PaymentForm({ clientSecret, setClientSecret }: PaymentFormInternalProps
               )}
             </div>
 
-            {/* Section 3: Payment Information */}
+            {/* Section 4: Payment Information */}
             <div className="border rounded-lg">
               <button
                 type="button"
@@ -1263,7 +1376,7 @@ function PaymentForm({ clientSecret, setClientSecret }: PaymentFormInternalProps
                 } ${checkoutStep !== 'payment' || !clientSecret ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
               >
                 <h5 className="font-semibold text-gray-900">
-                  3. Payment Information
+                  4. Payment Information
                 </h5>
                 {checkoutStep === 'payment' ? (
                   <ChevronUp className="w-5 h-5 text-gray-600" />

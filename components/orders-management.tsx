@@ -14,6 +14,7 @@ interface Order {
   name: string;
   book_format: string;
   quantity: number | null;
+  signing_names: string[] | null;
   amount: number;
   payment_intent_id: string;
   status: string;
@@ -336,6 +337,12 @@ export function OrdersManagement() {
               escapeHtml(order.shipping_postal_code || '')
             ].filter(Boolean).join(', ');
             const addressBlock = `${escapeHtml(order.shipping_first_name || '')} ${escapeHtml(order.shipping_last_name || '')}\n${escapeHtml(order.shipping_address_line1 || '')}\n${addressLine2}${cityStateZip}\n${escapeHtml(order.shipping_country || '')}`;
+            const signingNamesHtml = order.signing_names && order.signing_names.length > 0
+              ? `<div class="order-info"><strong>Signing Names:</strong><br>${order.signing_names.map((name, nameIndex) => 
+                  `Book ${nameIndex + 1}: ${escapeHtml(name)}`
+                ).join('<br>')}</div>`
+              : '';
+            
             return `
             <div class="order-item">
               <div class="order-header">Order ${index + 1}</div>
@@ -345,6 +352,7 @@ export function OrdersManagement() {
               <div class="order-info">Order Date: ${new Date(order.payment_completed_at || order.created_at).toLocaleDateString()}</div>
               <div class="order-info">Book Format: ${escapeHtml(order.book_format)}</div>
               ${order.quantity ? `<div class="order-info">Quantity: ${order.quantity}</div>` : ''}
+              ${signingNamesHtml}
             </div>
           `;
           }).join('')}
@@ -482,6 +490,11 @@ export function OrdersManagement() {
                     <div><strong>Email:</strong> {order.email}</div>
                     <div><strong>Book Format:</strong> {order.book_format}</div>
                     {order.quantity && <div><strong>Quantity:</strong> {order.quantity}</div>}
+                    {order.signing_names && order.signing_names.length > 0 && (
+                      <div className="text-green-700 font-medium">
+                        ✍️ Signed to: {order.signing_names.filter(n => n.trim()).join(', ')}
+                      </div>
+                    )}
                     <div><strong>Amount:</strong> {formatCurrency(order.amount)}</div>
                     {order.subtotal && (
                       <div className="text-xs text-gray-500">
@@ -515,6 +528,18 @@ export function OrdersManagement() {
                       <div>
                         <strong>Payment Intent ID:</strong> {order.payment_intent_id}
                       </div>
+                      {order.signing_names && order.signing_names.length > 0 && (
+                        <div>
+                          <strong>Signing Names:</strong>
+                          <div className="mt-1 space-y-1">
+                            {order.signing_names.map((name, index) => (
+                              <div key={index} className="text-gray-700">
+                                Book {index + 1}: {name}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                       {(order.shipping_address_line1 || order.shipping_city) && (
                         <div>
                           <strong>Shipping Address:</strong>
@@ -599,6 +624,11 @@ export function OrdersManagement() {
                             <div><strong>Email:</strong> {order.email}</div>
                             <div><strong>Book Format:</strong> {order.book_format}</div>
                             {order.quantity && <div><strong>Quantity:</strong> {order.quantity}</div>}
+                            {order.signing_names && order.signing_names.length > 0 && (
+                              <div className="text-green-700 font-medium">
+                                ✍️ Signed to: {order.signing_names.filter(n => n.trim()).join(', ')}
+                              </div>
+                            )}
                             <div><strong>Amount:</strong> {formatCurrency(order.amount)}</div>
                             {order.subtotal && (
                               <div className="text-xs text-gray-500">
@@ -642,6 +672,18 @@ export function OrdersManagement() {
                               <div>
                                 <strong>Payment Intent ID:</strong> {order.payment_intent_id}
                               </div>
+                              {order.signing_names && order.signing_names.length > 0 && (
+                                <div>
+                                  <strong>Signing Names:</strong>
+                                  <div className="mt-1 space-y-1">
+                                    {order.signing_names.map((name, index) => (
+                                      <div key={index} className="text-gray-700">
+                                        Book {index + 1}: {name}
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
                               {(order.shipping_address_line1 || order.shipping_city) && (
                                 <div>
                                   <strong>Shipping Address:</strong>
