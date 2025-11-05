@@ -7,6 +7,7 @@ interface OrderConfirmationEmailData {
   bookTitle: string;
   bookFormat: string;
   quantity: number;
+  signingNames?: string[] | null;
   subtotal: number;
   taxAmount: number;
   shippingAmount: number;
@@ -91,6 +92,17 @@ ${data.shippingAddress.country}
         <strong style="color: #666; font-size: 14px;">Quantity:</strong>
         <span style="color: #333; font-size: 14px; margin-left: 10px;">${data.quantity}</span>
       </div>
+      
+      ${data.signingNames && data.signingNames.length > 0 ? `
+      <div style="margin-bottom: 0; margin-top: 15px; padding-top: 15px; border-top: 1px solid #e5e7eb;">
+        <strong style="color: #666; font-size: 14px; display: block; margin-bottom: 8px;">Book Signing:</strong>
+        ${data.signingNames.map((name, index) => `
+          <div style="color: #333; font-size: 14px; margin-bottom: 5px; margin-left: 10px;">
+            Book ${index + 1}: ${name}
+          </div>
+        `).join('')}
+      </div>
+      ` : ''}
 
     </div>
 
@@ -139,7 +151,7 @@ ${data.shippingAddress.country}
     <!-- Footer -->
     <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
       <p style="color: #666; font-size: 12px; margin: 0 0 10px 0;">
-        If you have any questions, please contact us at ${fromEmail}
+        If you have any questions, please contact us at ${process.env.ADMIN_EMAIL || fromEmail}
       </p>
       <p style="color: #999; font-size: 11px; margin: 0;">
         © ${new Date().getFullYear()} Dr. Samly Maat. All rights reserved.
@@ -162,6 +174,7 @@ Order ID: ${data.orderId}
 Book: ${data.bookTitle}
 Format: ${data.bookFormat}
 Quantity: ${data.quantity}
+${data.signingNames && data.signingNames.length > 0 ? `\nBook Signing:\n${data.signingNames.map((name, index) => `Book ${index + 1}: ${name}`).join('\n')}\n` : ''}
 
 SHIPPING ADDRESS
 ${shippingAddressText}
@@ -174,7 +187,7 @@ WHAT'S NEXT?
 - You'll receive an email when your order ships
 - Track your order status at any time
 
-If you have any questions, please contact us at ${fromEmail}
+If you have any questions, please contact us at ${process.env.ADMIN_EMAIL || fromEmail}
 
 © ${new Date().getFullYear()} Dr. Samly Maat. All rights reserved.
     `.trim();
@@ -298,6 +311,17 @@ ${data.shippingAddress.country}
         <strong style="color: #666; font-size: 14px;">Quantity:</strong>
         <span style="color: #333; font-size: 14px; margin-left: 10px;">${data.quantity}</span>
       </div>
+      
+      ${data.signingNames && data.signingNames.length > 0 ? `
+      <div style="margin-bottom: 0; margin-top: 15px; padding-top: 15px; border-top: 1px solid #e5e7eb;">
+        <strong style="color: #666; font-size: 14px; display: block; margin-bottom: 8px;">Book Signing:</strong>
+        ${data.signingNames.map((name, index) => `
+          <div style="color: #333; font-size: 14px; margin-bottom: 5px; margin-left: 10px;">
+            Book ${index + 1}: ${name}
+          </div>
+        `).join('')}
+      </div>
+      ` : ''}
 
     </div>
 
@@ -364,6 +388,7 @@ ORDER DETAILS
 Book: ${data.bookTitle}
 Format: ${data.bookFormat}
 Quantity: ${data.quantity}
+${data.signingNames && data.signingNames.length > 0 ? `\nBook Signing:\n${data.signingNames.map((name, index) => `Book ${index + 1}: ${name}`).join('\n')}\n` : ''}
 
 SHIPPING ADDRESS
 ${shippingAddressText}
