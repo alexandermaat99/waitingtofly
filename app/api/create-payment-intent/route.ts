@@ -442,7 +442,13 @@ export async function POST(request: NextRequest) {
       shipping: shippingAmount,
       tax: finalTaxAmount,
     });
-    const paymentIntent = await stripe.paymentIntents.create(paymentIntentData);
+    // Use preview API version for hooks feature (tax calculation linking)
+    // The hooks parameter requires the 2025-09-30 preview API version
+    const paymentIntent = await stripe.paymentIntents.create(paymentIntentData, {
+      headers: {
+        'Stripe-Version': '2025-09-30 preview',
+      },
+    });
     console.log('✅ PaymentIntent created:', {
       id: paymentIntent.id,
       amount: paymentIntent.amount,
