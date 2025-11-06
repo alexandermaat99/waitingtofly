@@ -373,9 +373,10 @@ export async function POST(request: NextRequest) {
       });
     }
     
-    // Step 2: Create payment intent with tax calculation linked (if available and tax > 0)
-    // Only link tax calculation if we actually got valid tax from Stripe Tax
-    // If we're using fallback manual calculation, don't link the $0 tax calculation
+    // Step 2: Create payment intent with tax included in amount
+    // Note: Tax calculation ID is stored in metadata for reference
+    // The hooks parameter (for linking tax calculations) requires preview API version
+    // which causes build issues, so we're storing tax_calculation_id in metadata instead
     const paymentIntentData: any = {
       amount: formatAmountForStripe(finalTotal),
       currency: 'usd',
@@ -383,17 +384,6 @@ export async function POST(request: NextRequest) {
         enabled: true,
         allow_redirects: 'always', // Required for PayPal and other redirect-based payment methods
       },
-      // Link tax calculation to PaymentIntent ONLY if tax > 0 (valid Stripe Tax result)
-      // Don't link if we fell back to manual calculation
-      ...(taxCalculation && finalTaxAmount > 0 && formatAmountFromStripe(taxCalculation.tax_amount_exclusive || 0) > 0 && {
-        hooks: {
-          inputs: {
-            tax: {
-              calculation: taxCalculation.id,
-            },
-          },
-        },
-      }),
       // Shipping address for Stripe's fraud detection and shipping info
       shipping: {
         name: `${shippingFirstName} ${shippingLastName}`,
@@ -431,7 +421,7 @@ export async function POST(request: NextRequest) {
     };
     
     if (taxCalculation) {
-      console.log('🔗 Linked tax calculation to PaymentIntent:', taxCalculation.id);
+      console.log('📋 Tax calculation ID stored in metadata:', taxCalculation.id);
     }
     
     // Create the PaymentIntent
@@ -442,13 +432,7 @@ export async function POST(request: NextRequest) {
       shipping: shippingAmount,
       tax: finalTaxAmount,
     });
-    // Use preview API version for hooks feature (tax calculation linking)
-    // The hooks parameter requires the 2025-09-30 preview API version
-    const paymentIntent = await stripe.paymentIntents.create(paymentIntentData, {
-      headers: {
-        'Stripe-Version': '2025-09-30 preview',
-      },
-    });
+    const paymentIntent = await stripe.paymentIntents.create(paymentIntentData);
     console.log('✅ PaymentIntent created:', {
       id: paymentIntent.id,
       amount: paymentIntent.amount,
