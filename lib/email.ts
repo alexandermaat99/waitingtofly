@@ -224,6 +224,11 @@ export async function sendAdminOrderNotificationEmail(data: OrderConfirmationEma
     return { success: false, error: 'Admin email not configured' };
   }
 
+  // NOTE: ADMIN_EMAIL must be a valid, deliverable email address.
+  // If you get bounce errors, check that the email address exists and the domain has email configured.
+  // Common issue: Using a domain that doesn't have email configured (e.g., @waitingtoflymemoir.com).
+  // Solution: Use a valid email address like samly@waitingtofly.com or alexandermaat@gmail.com
+
   if (!process.env.RESEND_API_KEY) {
     console.warn('RESEND_API_KEY not set, skipping admin notification email');
     return { success: false, error: 'Email service not configured' };

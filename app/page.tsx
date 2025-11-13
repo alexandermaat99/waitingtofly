@@ -31,7 +31,7 @@ export default function Home() {
 
   if (isLoading) {
     return (
-      <main className="min-h-screen flex flex-col">
+      <main className="min-h-screen flex flex-col w-full max-w-full overflow-x-hidden">
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
@@ -43,23 +43,23 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen flex flex-col">
+    <main className="min-h-screen flex flex-col w-full max-w-full overflow-x-hidden">
 
       {/* Preorder Banner */}
-      <Link href="/checkout" className="w-full bg-gradient-to-r from-green-600 to-green-700 text-white py-3 hover:from-green-700 hover:to-green-800 transition-all duration-200 cursor-pointer block">
-        <div className="max-w-6xl mx-auto px-4 text-center">
-          <p className="text-lg font-semibold">
+      <Link href="/checkout" className="w-full bg-gradient-to-r from-green-600 to-green-700 text-white py-3 hover:from-green-700 hover:to-green-800 transition-all duration-200 cursor-pointer block overflow-x-hidden">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 text-center">
+          <p className="text-base sm:text-lg font-semibold break-words px-2">
             🎉 <strong>Limited Time:</strong> Preorder now and get a <strong>signed copy</strong> of &ldquo;Waiting to Fly&rdquo; while supplies last!
           </p>
         </div>
       </Link>
 
       {/* Main Content */}
-      <div className="flex-1">
+      <div className="flex-1 w-full overflow-x-hidden">
         <BookHero />
         
-        <section id="preorder" className="w-full bg-gray-50 py-16">
-          <div className="max-w-4xl mx-auto px-4">
+        <section id="preorder" className="w-full bg-gray-50 py-16 overflow-x-hidden">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6">
             <div className="text-center mb-12">
               <h2 className="text-3xl font-bold text-gray-900 mb-4">
                 Stay Connected
@@ -78,8 +78,8 @@ export default function Home() {
         <Foreword />
 
         {/* Footer */}
-        <footer className="w-full bg-green-900 text-white py-16">
-          <div className="max-w-6xl mx-auto px-4">
+        <footer className="w-full bg-green-900 text-white py-16 overflow-x-hidden">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6">
             <div className="grid md:grid-cols-3 gap-8">
               <div>
                 <h3 className="text-xl font-bold mb-4">{siteConfig?.name || 'Waiting to Fly'}</h3>
