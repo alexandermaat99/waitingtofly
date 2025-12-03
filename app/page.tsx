@@ -67,15 +67,9 @@ export default function Home() {
       {isSoldOut && (
         <div className="w-full bg-gradient-to-r from-green-600 to-green-700 text-white py-3 overflow-x-hidden">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 text-center">
-            <p className="text-base sm:text-lg font-semibold break-words px-2 mb-2">
-              <span className="text-red-300 font-bold">{preorderStatus?.status}</span>: {preorderStatus?.message}
+            <p className="text-base sm:text-lg font-semibold break-words px-2">
+              <span className="inline-block bg-red-100 text-red-700 font-bold px-3 py-1 rounded-full">{preorderStatus?.status}</span> {preorderStatus?.message}
             </p>
-            <a 
-              href="/#preorder" 
-              className="inline-block bg-white text-green-700 font-semibold px-4 py-2 rounded-md hover:bg-gray-100 transition-colors text-sm sm:text-base"
-            >
-              Sign up for updates
-            </a>
           </div>
         </div>
       )}
