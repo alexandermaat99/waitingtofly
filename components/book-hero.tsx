@@ -2,20 +2,25 @@
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { getBookInfo } from "@/lib/site-config-client";
+import { getBookInfo, getPreorderStatus } from "@/lib/site-config-client";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
 export function BookHero() {
   const [bookInfo, setBookInfo] = useState<any>(null);
+  const [preorderStatus, setPreorderStatus] = useState<{ status: string; message: string } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchBookInfo = async () => {
       try {
-        const data = await getBookInfo();
+        const [data, status] = await Promise.all([
+          getBookInfo(),
+          getPreorderStatus()
+        ]);
         setBookInfo(data);
+        setPreorderStatus(status);
       } catch (error) {
         console.error('Error fetching book info:', error);
       } finally {
@@ -110,18 +115,43 @@ export function BookHero() {
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 w-full">
-            <Link href="/checkout" className="w-full sm:w-auto">
-              <Button size="lg" className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white px-6 sm:px-8 py-3 text-base sm:text-lg">
-                Preorder Now
-              </Button>
-            </Link>
-            <Link href="#foreword" scroll={true} className="w-full sm:w-auto">
-              <Button size="lg" variant="outline" className="w-full sm:w-auto border-green-600 text-green-600 hover:bg-green-50 px-6 sm:px-8 py-3 text-base sm:text-lg">
-                Read Foreword
-              </Button>
-            </Link>
-          </div>
+          {preorderStatus && (preorderStatus.status === "Sold Out" || preorderStatus.status === "Closed") ? (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-6">
+              <div className="mb-3">
+                <span className="inline-block bg-red-100 text-red-700 text-lg font-semibold px-4 py-2 rounded-full">
+                  {preorderStatus.status}
+                </span>
+              </div>
+              <p className="text-base text-gray-700 leading-relaxed mb-4">
+                {preorderStatus.message}
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 w-full">
+                <Link href="/#preorder" className="w-full sm:w-auto">
+                  <Button size="lg" className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white px-6 sm:px-8 py-3 text-base sm:text-lg">
+                    Sign up for updates
+                  </Button>
+                </Link>
+                <Link href="#foreword" scroll={true} className="w-full sm:w-auto">
+                  <Button size="lg" variant="outline" className="w-full sm:w-auto border-green-600 text-green-600 hover:bg-green-50 px-6 sm:px-8 py-3 text-base sm:text-lg">
+                    Read Foreword
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 w-full">
+              <Link href="/checkout" className="w-full sm:w-auto">
+                <Button size="lg" className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white px-6 sm:px-8 py-3 text-base sm:text-lg">
+                  Preorder Now
+                </Button>
+              </Link>
+              <Link href="#foreword" scroll={true} className="w-full sm:w-auto">
+                <Button size="lg" variant="outline" className="w-full sm:w-auto border-green-600 text-green-600 hover:bg-green-50 px-6 sm:px-8 py-3 text-base sm:text-lg">
+                  Read Foreword
+                </Button>
+              </Link>
+            </div>
+          )}
 
           <div className="text-sm text-gray-500 break-words">
             <p>Expected Release: {bookInfo.releaseDate}</p>

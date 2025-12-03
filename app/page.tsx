@@ -5,20 +5,25 @@ import { PreorderForm } from "@/components/preorder-form";
 import { AboutAuthor } from "@/components/about-author";
 import { Foreword } from "@/components/foreword";
 import { Testimonials } from "@/components/testimonials";
-import { getSiteConfigData } from "@/lib/site-config-client";
+import { getSiteConfigData, getPreorderStatus } from "@/lib/site-config-client";
 import Link from "next/link";
 import { FaInstagram, FaFacebook, FaLinkedin } from "react-icons/fa";
 import { useEffect, useState } from "react";
 
 export default function Home() {
   const [siteConfig, setSiteConfig] = useState<any>(null);
+  const [preorderStatus, setPreorderStatus] = useState<{ status: string; message: string } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const siteData = await getSiteConfigData();
+        const [siteData, status] = await Promise.all([
+          getSiteConfigData(),
+          getPreorderStatus()
+        ]);
         setSiteConfig(siteData);
+        setPreorderStatus(status);
       } catch (error) {
         console.error('Error fetching site data:', error);
       } finally {
@@ -42,17 +47,38 @@ export default function Home() {
     );
   }
 
+  const isSoldOut = preorderStatus && (preorderStatus.status === "Sold Out" || preorderStatus.status === "Closed");
+
   return (
     <main className="min-h-screen flex flex-col w-full max-w-full overflow-x-hidden">
 
-      {/* Preorder Banner */}
-      <Link href="/checkout" className="w-full bg-gradient-to-r from-green-600 to-green-700 text-white py-3 hover:from-green-700 hover:to-green-800 transition-all duration-200 cursor-pointer block overflow-x-hidden">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 text-center">
-          <p className="text-base sm:text-lg font-semibold break-words px-2">
-            🎉 <strong>Limited Time:</strong> Preorder now and get a <strong>signed copy</strong> of &ldquo;Waiting to Fly&rdquo; while supplies last!
-          </p>
+      {/* Preorder Banner - Only show if not sold out */}
+      {!isSoldOut && (
+        <Link href="/checkout" className="w-full bg-gradient-to-r from-green-600 to-green-700 text-white py-3 hover:from-green-700 hover:to-green-800 transition-all duration-200 cursor-pointer block overflow-x-hidden">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 text-center">
+            <p className="text-base sm:text-lg font-semibold break-words px-2">
+              🎉 <strong>Limited Time:</strong> Preorder now and get a <strong>signed copy</strong> of &ldquo;Waiting to Fly&rdquo; while supplies last!
+            </p>
+          </div>
+        </Link>
+      )}
+      
+      {/* Sold Out Banner */}
+      {isSoldOut && (
+        <div className="w-full bg-gradient-to-r from-green-600 to-green-700 text-white py-3 overflow-x-hidden">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 text-center">
+            <p className="text-base sm:text-lg font-semibold break-words px-2 mb-2">
+              <span className="text-red-300 font-bold">{preorderStatus?.status}</span>: {preorderStatus?.message}
+            </p>
+            <a 
+              href="/#preorder" 
+              className="inline-block bg-white text-green-700 font-semibold px-4 py-2 rounded-md hover:bg-gray-100 transition-colors text-sm sm:text-base"
+            >
+              Sign up for updates
+            </a>
+          </div>
         </div>
-      </Link>
+      )}
 
       {/* Main Content */}
       <div className="flex-1 w-full overflow-x-hidden">

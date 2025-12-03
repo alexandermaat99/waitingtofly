@@ -1,5 +1,6 @@
 import { PreorderFormWithPayment } from "@/components/preorder-form-with-payment";
 import { Suspense } from "react";
+import { PreorderStatusMessage } from "@/components/preorder-status-message";
 
 export default function CheckoutPage() {
   return (
@@ -12,7 +13,9 @@ export default function CheckoutPage() {
           </div>
         </div>
       }>
-      <PreorderFormWithPayment />
+      <PreorderStatusMessage>
+        <PreorderFormWithPayment />
+      </PreorderStatusMessage>
       </Suspense>
     </main>
   );

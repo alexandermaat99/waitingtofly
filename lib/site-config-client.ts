@@ -78,6 +78,10 @@ export async function getShippingPrice(): Promise<number> {
   return typeof price === 'number' ? price : 0;
 }
 
+export async function getPreorderStatus() {
+  return getSiteConfig<{ status: string; message: string }>('preorder_status');
+}
+
 
 // Clear cache (useful for admin updates)
 export function clearConfigCache() {
