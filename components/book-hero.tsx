@@ -6,6 +6,7 @@ import { getBookInfo, getPreorderStatus } from "@/lib/site-config-client";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { BonusStar } from "@/components/bonus-star";
 
 export function BookHero() {
   const [bookInfo, setBookInfo] = useState<any>(null);
@@ -56,8 +57,9 @@ export function BookHero() {
     <section id="about" className="w-full max-w-6xl mx-auto px-4 sm:px-6 py-16 overflow-x-hidden">
       <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
         {/* Book Cover */}
-        <div className="flex justify-center lg:justify-start w-full max-w-full">
+        <div className="flex justify-center lg:justify-start w-full max-w-full relative">
           {bookInfo.coverImage ? (
+            <div className="relative">
             <Image
               src={bookInfo.coverImage}
               alt={`${bookInfo.title} - Book Cover`}
@@ -66,6 +68,11 @@ export function BookHero() {
               className="w-full max-w-full h-auto object-contain"
               priority
             />
+              {/* Red Star Badge */}
+              <div className="absolute top-4 right-4 sm:top-6 sm:right-6 md:top-8 md:right-8 z-10">
+                <BonusStar />
+              </div>
+            </div>
           ) : (
             <Card className="w-full max-w-80 h-96 bg-gradient-to-br from-blue-50 to-indigo-100 border-2 border-dashed border-gray-300 flex items-center justify-center">
               <div className="text-center text-gray-500">
